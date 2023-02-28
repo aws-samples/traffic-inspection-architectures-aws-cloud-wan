@@ -112,7 +112,7 @@ In all the examples we are deploying resources in three AWS Regions: N. Virginia
 }
 ```
 
-### East/West traffic, with both Spoke VPCs and Inspection VPCs attached to AWS Cloud WAN.
+### East/West traffic, with both Spoke VPCs and Inspection VPCs attached to AWS Cloud WAN.
 
 * 1 segment per routing domain, plus 1 segment for the post-inspection per AWS Region.
   * In the example we are creating resources in 3 AWS Regions, so 3 *security* segments are needed.
