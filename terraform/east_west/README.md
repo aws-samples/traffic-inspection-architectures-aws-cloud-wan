@@ -13,10 +13,7 @@
 ## Usage
 - Clone the repository
 - (Optional) Edit the variables.tf file in the project root directory - if you want to test with different parameters.
-- Deploy first the Global Network, Core Network, and Policy document attachment by using `terraform apply -target="aws_networkmanager_global_network.global_network" -target="aws_networkmanager_core_network.core_network" -target="aws_networkmanager_core_network_policy_attachment.core_network_policy_attachment"`
-- Deploy the rest of the resources using `terraform apply`.
-- Uncomment lines 113 - 137 in *cloud\_wan\_poliy.tf* file to create the static routes in the Core Network.
-- Deploy the updated policy using `terraform apply`.
+- Deploy the resources using `terraform apply`.
 - Remember to clean up resoures once you are done by using `terraform destroy`.
 
 **Note** EC2 instances, VPC endpoints, and AWS Network Firewall endpoints will be deployed in all the Availability Zones configured for each VPC. Keep this in mind when testing this environment from a cost perspective - for production environments, we recommend the use of at least 2 AZs for high-availability.
@@ -26,14 +23,14 @@
 | Name | Version |
 |------|---------|
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.3.0 |
-| <a name="requirement_aws"></a> [aws](#requirement\_aws) | >= 4.46.0 |
+| <a name="requirement_aws"></a> [aws](#requirement\_aws) | >= 4.57.0 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | >= 4.46.0 |
-| <a name="provider_aws.awsnvirginia"></a> [aws.awsnvirginia](#provider\_aws.awsnvirginia) | >= 4.46.0 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | 4.57.0 |
+| <a name="provider_aws.awsnvirginia"></a> [aws.awsnvirginia](#provider\_aws.awsnvirginia) | 4.57.0 |
 
 ## Modules
 

@@ -110,29 +110,29 @@ data "aws_networkmanager_core_network_policy_document" "core_network_policy" {
   }
 
   # Static routes from dev and prod segments to Inspection VPCs
-  # dynamic "segment_actions" {
-  #   for_each = local.routing_domains
-  #   iterator = domain
+  dynamic "segment_actions" {
+    for_each = local.routing_domains
+    iterator = domain
 
-  #   content {
-  #     action                  = "create-route"
-  #     segment                 = domain.value
-  #     destination_cidr_blocks = ["0.0.0.0/0"]
-  #     destinations            = values({ for k, v in local.region_information : k => v.inspection_vpc_attachment })
-  #   }
-  # }
+    content {
+      action                  = "create-route"
+      segment                 = domain.value
+      destination_cidr_blocks = ["0.0.0.0/0"]
+      destinations            = values({ for k, v in local.region_information : k => v.inspection_vpc_attachment })
+    }
+  }
 
   # Create of static routes - per AWS Region, we need to point those VPCs CIDRs to pass through the local Inspection VPC in the other inspection segments
   # For example, N. Virginia CIDRs to Inspection VPC in N.Virginia --> inspectionireland & inspectionsydney
-  # dynamic "segment_actions" {
-  #   for_each = local.region_combination
-  #   iterator = combination
+  dynamic "segment_actions" {
+    for_each = local.region_combination
+    iterator = combination
 
-  #   content {
-  #     action                  = "create-route"
-  #     segment                 = "inspection${combination.value.inspection}"
-  #     destination_cidr_blocks = local.region_information[combination.value.destination].cidr_blocks
-  #     destinations            = [local.region_information[combination.value.destination].inspection_vpc_attachment]
-  #   }
-  # }
+    content {
+      action                  = "create-route"
+      segment                 = "inspection${combination.value.inspection}"
+      destination_cidr_blocks = local.region_information[combination.value.destination].cidr_blocks
+      destinations            = [local.region_information[combination.value.destination].inspection_vpc_attachment]
+    }
+  }
 }
