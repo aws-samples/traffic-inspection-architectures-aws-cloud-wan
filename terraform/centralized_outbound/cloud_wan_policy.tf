@@ -85,15 +85,15 @@ data "aws_networkmanager_core_network_policy_document" "core_network_policy" {
   }
 
   # Static routes from dev and prod segments to Inspection VPCs
-  # dynamic "segment_actions" {
-  #   for_each = local.routing_domains
-  #   iterator = domain
+  dynamic "segment_actions" {
+    for_each = local.routing_domains
+    iterator = domain
 
-  #   content {
-  #     action                  = "create-route"
-  #     segment                 = domain.value
-  #     destination_cidr_blocks = ["0.0.0.0/0"]
-  #     destinations            = values({ for k, v in local.inspection_vpc_attachment : k => v })
-  #   }
-  # }
+    content {
+      action                  = "create-route"
+      segment                 = domain.value
+      destination_cidr_blocks = ["0.0.0.0/0"]
+      destinations            = values({ for k, v in local.inspection_vpc_attachment : k => v })
+    }
+  }
 }
