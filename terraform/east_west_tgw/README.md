@@ -23,16 +23,16 @@
 | Name | Version |
 |------|---------|
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.3.0 |
-| <a name="requirement_aws"></a> [aws](#requirement\_aws) | >= 4.46.0 |
+| <a name="requirement_aws"></a> [aws](#requirement\_aws) | >= 4.57.0 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | 4.56.0 |
-| <a name="provider_aws.awsireland"></a> [aws.awsireland](#provider\_aws.awsireland) | 4.56.0 |
-| <a name="provider_aws.awsnvirginia"></a> [aws.awsnvirginia](#provider\_aws.awsnvirginia) | 4.56.0 |
-| <a name="provider_aws.awssydney"></a> [aws.awssydney](#provider\_aws.awssydney) | 4.56.0 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | >= 4.57.0 |
+| <a name="provider_aws.awsireland"></a> [aws.awsireland](#provider\_aws.awsireland) | >= 4.57.0 |
+| <a name="provider_aws.awsnvirginia"></a> [aws.awsnvirginia](#provider\_aws.awsnvirginia) | >= 4.57.0 |
+| <a name="provider_aws.awssydney"></a> [aws.awssydney](#provider\_aws.awssydney) | >= 4.57.0 |
 
 ## Modules
 
