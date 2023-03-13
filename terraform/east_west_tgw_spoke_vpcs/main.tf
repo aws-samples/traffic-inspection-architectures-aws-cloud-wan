@@ -22,8 +22,8 @@ resource "aws_networkmanager_core_network" "core_network" {
   description       = "Core Network - ${var.identifier}"
   global_network_id = aws_networkmanager_global_network.global_network.id
 
-  create_base_policy = true
-  base_policy_regions = values({ for k, v in var.aws_regions: k => v.code })
+  create_base_policy  = true
+  base_policy_regions = values({ for k, v in var.aws_regions : k => v.code })
 
   tags = {
     Name = "Core Network - ${var.identifier}"

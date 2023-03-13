@@ -5,9 +5,15 @@
 
 locals {
   # We get the list of AWS Region codes from var.aws_regions
-  regions = keys({ for k, v in var.aws_regions : k => v })
+  region_codes = values({ for k, v in var.aws_regions : k => v })
+  # We get the list of AWS Region names from var.aws_regions
+  region_names = keys({ for k, v in var.aws_regions : k => v })
   # List of routing domains
-  routing_domains = distinct(values({ for k, v in var.ireland_spoke_vpcs : k => v.segment }))
+  routing_domains = distinct(values(merge(
+    { for k, v in var.ireland_spoke_vpcs : k => v.segment },
+    { for k, v in var.nvirginia_spoke_vpcs : k => v.segment },
+    { for k, v in var.sydney_spoke_vpcs : k => v.segment }
+  )))
 
   # Information about the CIDR blocks and Inspection VPC attachments of each AWS Region
   region_information = {
@@ -29,8 +35,8 @@ locals {
   # - inspection --> inspection segment to create the static routes
   # - destination --> destination AWS Region, to add the destination CIDRs + Inspection VPC of that Region
   region_combination = flatten(
-    [for region1 in local.regions :
-      [for region2 in local.regions :
+    [for region1 in local.region_names :
+      [for region2 in local.region_names :
         {
           inspection  = region1
           destination = region2
@@ -48,30 +54,30 @@ data "aws_networkmanager_core_network_policy_document" "core_network_policy" {
     asn_ranges       = ["64520-65525"]
 
     dynamic "edge_locations" {
-      for_each = local.regions
+      for_each = local.region_codes
       iterator = region
 
       content {
-        location = var.aws_regions[region.value]
+        location = region.value
       }
     }
   }
 
-  segments {
-    name                          = "prod"
-    require_attachment_acceptance = false
-    isolate_attachments           = var.segment_configuration == "default" ? false : true
-  }
+  # We create 1 segment per routing domain
+  dynamic "segments" {
+    for_each = local.routing_domains
+    iterator = domain
 
-  segments {
-    name                          = "dev"
-    require_attachment_acceptance = false
-    isolate_attachments           = var.segment_configuration == "default" ? false : true
+    content {
+      name                          = domain.value
+      require_attachment_acceptance = false
+      isolate_attachments           = var.segment_configuration == "default" ? false : true
+    }
   }
 
   # We create 1 inspection segment per AWS Region
   dynamic "segments" {
-    for_each = local.regions
+    for_each = local.region_names
     iterator = region
 
     content {
@@ -105,7 +111,7 @@ data "aws_networkmanager_core_network_policy_document" "core_network_policy" {
       action     = "share"
       mode       = "attachment-route"
       segment    = domain.value
-      share_with = [for r in local.regions : "inspection${r}"]
+      share_with = [for r in local.region_names : "inspection${r}"]
     }
   }
 
