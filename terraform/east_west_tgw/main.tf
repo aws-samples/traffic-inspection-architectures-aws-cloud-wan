@@ -21,11 +21,15 @@ resource "aws_networkmanager_core_network" "core_network" {
 
   description       = "Core Network - ${var.identifier}"
   global_network_id = aws_networkmanager_global_network.global_network.id
-  policy_document   = jsonencode(jsondecode(data.aws_networkmanager_core_network_policy_document.core_network_policy.json))
 
   tags = {
     Name = "Core Network - ${var.identifier}"
   }
+}
+
+resource "aws_networkmanager_core_network_policy_attachment" "policy_attachment" {
+  core_network_id = aws_networkmanager_core_network.core_network.id
+  policy_document = jsonencode(jsondecode(data.aws_networkmanager_core_network_policy_document.core_network_policy.json))
 }
 
 # ---------- GLOBAL RESOURCES - IAM ROLES ----------
@@ -41,7 +45,7 @@ module "iam" {
 module "ireland_spoke_vpcs" {
   for_each  = var.ireland_spoke_vpcs
   source    = "aws-ia/vpc/aws"
-  version   = "= 4.0.0"
+  version   = "= 4.3.0"
   providers = { aws = aws.awsireland }
 
   name       = each.key
@@ -63,7 +67,7 @@ module "ireland_spoke_vpcs" {
 # Inspection VPC - definition in variables.tf
 module "ireland_inspection_vpc" {
   source    = "aws-ia/vpc/aws"
-  version   = "= 4.0.0"
+  version   = "= 4.3.0"
   providers = { aws = aws.awsireland }
 
   name       = var.ireland_inspection_vpc.name
@@ -161,7 +165,7 @@ module "ireland_endpoints" {
 module "nvirginia_spoke_vpcs" {
   for_each  = var.nvirginia_spoke_vpcs
   source    = "aws-ia/vpc/aws"
-  version   = "= 4.0.0"
+  version   = "= 4.3.0"
   providers = { aws = aws.awsnvirginia }
 
   name       = each.key
@@ -183,7 +187,7 @@ module "nvirginia_spoke_vpcs" {
 # Inspection VPC - definition in variables.tf
 module "nvirginia_inspection_vpc" {
   source    = "aws-ia/vpc/aws"
-  version   = "= 4.0.0"
+  version   = "= 4.3.0"
   providers = { aws = aws.awsnvirginia }
 
   name       = var.nvirginia_inspection_vpc.name
@@ -281,7 +285,7 @@ module "nvirginia_endpoints" {
 module "sydney_spoke_vpcs" {
   for_each  = var.sydney_spoke_vpcs
   source    = "aws-ia/vpc/aws"
-  version   = "= 4.0.0"
+  version   = "= 4.3.0"
   providers = { aws = aws.awssydney }
 
   name       = each.key
@@ -303,7 +307,7 @@ module "sydney_spoke_vpcs" {
 # Inspection VPC - definition in variables.tf
 module "sydney_inspection_vpc" {
   source    = "aws-ia/vpc/aws"
-  version   = "= 4.0.0"
+  version   = "= 4.3.0"
   providers = { aws = aws.awssydney }
 
   name       = var.sydney_inspection_vpc.name

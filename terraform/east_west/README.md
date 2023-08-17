@@ -29,8 +29,8 @@
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | 4.57.0 |
-| <a name="provider_aws.awsnvirginia"></a> [aws.awsnvirginia](#provider\_aws.awsnvirginia) | 4.57.0 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | >= 4.57.0 |
+| <a name="provider_aws.awsnvirginia"></a> [aws.awsnvirginia](#provider\_aws.awsnvirginia) | >= 4.57.0 |
 
 ## Modules
 
@@ -40,18 +40,18 @@
 | <a name="module_ireland_compute"></a> [ireland\_compute](#module\_ireland\_compute) | ../modules/compute | n/a |
 | <a name="module_ireland_endpoints"></a> [ireland\_endpoints](#module\_ireland\_endpoints) | ../modules/endpoints | n/a |
 | <a name="module_ireland_inspection"></a> [ireland\_inspection](#module\_ireland\_inspection) | ./modules/inspection | n/a |
-| <a name="module_ireland_inspection_vpc"></a> [ireland\_inspection\_vpc](#module\_ireland\_inspection\_vpc) | aws-ia/vpc/aws | = 4.0.0 |
-| <a name="module_ireland_spoke_vpcs"></a> [ireland\_spoke\_vpcs](#module\_ireland\_spoke\_vpcs) | aws-ia/vpc/aws | = 4.0.0 |
+| <a name="module_ireland_inspection_vpc"></a> [ireland\_inspection\_vpc](#module\_ireland\_inspection\_vpc) | aws-ia/vpc/aws | = 4.3.0 |
+| <a name="module_ireland_spoke_vpcs"></a> [ireland\_spoke\_vpcs](#module\_ireland\_spoke\_vpcs) | aws-ia/vpc/aws | = 4.3.0 |
 | <a name="module_nvirginia_compute"></a> [nvirginia\_compute](#module\_nvirginia\_compute) | ../modules/compute | n/a |
 | <a name="module_nvirginia_endpoints"></a> [nvirginia\_endpoints](#module\_nvirginia\_endpoints) | ../modules/endpoints | n/a |
 | <a name="module_nvirginia_inspection"></a> [nvirginia\_inspection](#module\_nvirginia\_inspection) | ./modules/inspection | n/a |
-| <a name="module_nvirginia_inspection_vpc"></a> [nvirginia\_inspection\_vpc](#module\_nvirginia\_inspection\_vpc) | aws-ia/vpc/aws | = 4.0.0 |
-| <a name="module_nvirginia_spoke_vpcs"></a> [nvirginia\_spoke\_vpcs](#module\_nvirginia\_spoke\_vpcs) | aws-ia/vpc/aws | = 4.0.0 |
+| <a name="module_nvirginia_inspection_vpc"></a> [nvirginia\_inspection\_vpc](#module\_nvirginia\_inspection\_vpc) | aws-ia/vpc/aws | = 4.3.0 |
+| <a name="module_nvirginia_spoke_vpcs"></a> [nvirginia\_spoke\_vpcs](#module\_nvirginia\_spoke\_vpcs) | aws-ia/vpc/aws | = 4.3.0 |
 | <a name="module_sydney_compute"></a> [sydney\_compute](#module\_sydney\_compute) | ../modules/compute | n/a |
 | <a name="module_sydney_endpoints"></a> [sydney\_endpoints](#module\_sydney\_endpoints) | ../modules/endpoints | n/a |
 | <a name="module_sydney_inspection"></a> [sydney\_inspection](#module\_sydney\_inspection) | ./modules/inspection | n/a |
-| <a name="module_sydney_inspection_vpc"></a> [sydney\_inspection\_vpc](#module\_sydney\_inspection\_vpc) | aws-ia/vpc/aws | = 4.0.0 |
-| <a name="module_sydney_spoke_vpcs"></a> [sydney\_spoke\_vpcs](#module\_sydney\_spoke\_vpcs) | aws-ia/vpc/aws | = 4.0.0 |
+| <a name="module_sydney_inspection_vpc"></a> [sydney\_inspection\_vpc](#module\_sydney\_inspection\_vpc) | aws-ia/vpc/aws | = 4.3.0 |
+| <a name="module_sydney_spoke_vpcs"></a> [sydney\_spoke\_vpcs](#module\_sydney\_spoke\_vpcs) | aws-ia/vpc/aws | = 4.3.0 |
 
 ## Resources
 
