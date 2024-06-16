@@ -32,7 +32,7 @@ The Core Network's policy creates the following resources:
 * 1 [network function group](https://docs.aws.amazon.com/network-manager/latest/cloudwan/cloudwan-policy-network-function-groups.html) (NFG) for the inspection VPCs. Core Network's policy includes an attachment policy rule that associates the inspection VPC to the NFG if the attachment includes the following tag: *inspection=true*.
 * **Service Insertion rules**: in each routing domain's segment, a [send-to](https://docs.aws.amazon.com/network-manager/latest/cloudwan/cloudwan-policy-service-insertion.html#:~:text=insertion%2Denabled%20segment.-,Send%20to,-%E2%80%94%20Traffic%20flows%20north) action is created to send the default traffic (0.0.0.0/0 and ::/0) to the inspection VPCs.
 
-![Centralized Outbound](./images/centralized_outbound.png)
+![Centralized Outbound](./images/centralizedOutbound.png)
 
 ```json
 {
@@ -234,7 +234,7 @@ In the example in this repository, the following matrix is used to determine whi
 | eu-west-1      | **us-east-1** | **eu-west-1** | **eu-west-1**      |
 | ap-southeast-2 | **us-east-1** | **eu-west-1** | **ap-southeast-2** |
 
-![East-West-SingleHop](../../images/east_west_singlehop.png)
+![East-West-SingleHop](./images/east_west_singlehop.png)
 
 ```json
 {
@@ -477,7 +477,7 @@ The following resources are created:
 
 Given we need to create a send-to action via the NFG, the east-west traffic inspection (send-via) between Regions can only be done using *single-hop* configuration. This is because a NFG can only be used in one mode (either *single-hop* or *dual-hop*), but not both at the same time.
 
-![East-West](./images/east_west_tgw_spoke_vpcs.png)
+![East-West](./images/east_west_tgw_spokeVpcs.png)
 
 ```json
 {

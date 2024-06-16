@@ -1,7 +1,7 @@
 <!-- BEGIN_TF_DOCS -->
 # Centralized Outbound inspection with AWS Cloud WAN
 
-![Centralized Outbound](../../images/centralized\_outbound.png)
+![Centralized Outbound](../../images/centralizedOutbound.png)
 
 ## Prerequisites
 - An AWS account with an IAM user with the appropriate permissions
