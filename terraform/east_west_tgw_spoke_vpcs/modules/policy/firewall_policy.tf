@@ -1,7 +1,7 @@
 /* Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  SPDX-License-Identifier: MIT-0 */
 
-# --- east_west/modules/inspection/firewall_policy.tf ---
+# --- east_west_tgw_spoke_vpcs/modules/policy/firewall_policy.tf ---
 
 resource "aws_networkfirewall_firewall_policy" "anfw_policy" {
   name = "firewall-policy-${var.identifier}"
@@ -103,8 +103,8 @@ resource "aws_networkfirewall_rule_group" "allow_icmp" {
     }
     rules_source {
       rules_string = <<EOF
-      pass icmp $PROD any -> $PROD any (msg: "Allowing PROD ICMP packets"; sid:2; rev:1;)
-      pass icmp $DEV any -> $DEV any (msg: "Allowing DEV ICMP packets"; sid:3; rev:1;)
+      alert icmp any any -> any any (msg: "Alerting traffic passing through firewall"; sid:1; rev:1;)
+      pass icmp any any -> any any (msg: "Allowing ICMP packets"; sid:2; rev:1;)
       EOF
     }
     stateful_rule_options {

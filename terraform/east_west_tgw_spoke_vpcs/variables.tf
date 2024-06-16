@@ -45,7 +45,7 @@ variable "ireland_spoke_vpcs" {
   default = {
     "prod" = {
       name                    = "prod-eu-west-1"
-      segment                 = "prod"
+      segment                 = "production"
       number_azs              = 2
       cidr_block              = "10.0.0.0/24"
       workload_subnet_netmask = 28
@@ -60,7 +60,7 @@ variable "ireland_spoke_vpcs" {
     }
     "dev" = {
       name                    = "dev-eu-west-1"
-      segment                 = "dev"
+      segment                 = "development"
       number_azs              = 2
       cidr_block              = "10.0.1.0/24"
       workload_subnet_netmask = 28
@@ -102,7 +102,7 @@ variable "nvirginia_spoke_vpcs" {
   default = {
     "prod" = {
       name                    = "prod-us-east-1"
-      segment                 = "prod"
+      segment                 = "production"
       number_azs              = 2
       cidr_block              = "10.10.0.0/24"
       workload_subnet_netmask = 28
@@ -117,7 +117,7 @@ variable "nvirginia_spoke_vpcs" {
     }
     "dev" = {
       name                    = "dev-us-east-1"
-      segment                 = "dev"
+      segment                 = "development"
       number_azs              = 2
       cidr_block              = "10.10.1.0/24"
       workload_subnet_netmask = 28
@@ -159,7 +159,7 @@ variable "sydney_spoke_vpcs" {
   default = {
     "prod" = {
       name                    = "prod-ap-southeast-2"
-      segment                 = "prod"
+      segment                 = "production"
       number_azs              = 2
       cidr_block              = "10.20.0.0/24"
       workload_subnet_netmask = 28
@@ -174,7 +174,7 @@ variable "sydney_spoke_vpcs" {
     }
     "dev" = {
       name                    = "dev-ap-southeast-2"
-      segment                 = "dev"
+      segment                 = "development"
       number_azs              = 2
       cidr_block              = "10.20.1.0/24"
       workload_subnet_netmask = 28

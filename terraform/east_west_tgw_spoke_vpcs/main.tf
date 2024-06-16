@@ -3,6 +3,11 @@
 
 # --- east_west_tgw_spoke_vpcs/main.tf ---
 
+locals {
+  core_network_policy = jsonencode(jsondecode(file("${path.module}/cloudwan_policy.json")))
+  base_policy         = jsonencode(jsondecode(file("${path.module}/base_policy.json")))
+}
+
 # ---------- AWS CLOUD WAN RESOURCES ----------
 # Global Network
 resource "aws_networkmanager_global_network" "global_network" {
@@ -22,8 +27,8 @@ resource "aws_networkmanager_core_network" "core_network" {
   description       = "Core Network - ${var.identifier}"
   global_network_id = aws_networkmanager_global_network.global_network.id
 
-  create_base_policy  = true
-  base_policy_regions = values({ for k, v in var.aws_regions : k => v.code })
+  create_base_policy   = true
+  base_policy_document = local.base_policy
 
   tags = {
     Name = "Core Network - ${var.identifier}"
@@ -35,23 +40,32 @@ resource "aws_networkmanager_core_network_policy_attachment" "core_network_polic
   provider = aws.awsnvirginia
 
   core_network_id = aws_networkmanager_core_network.core_network.id
-  policy_document = data.aws_networkmanager_core_network_policy_document.core_network_policy.json
+  policy_document = local.core_network_policy
+
+  depends_on = [
+    module.ireland_inspecion,
+    module.nvirginia_inspecion,
+    module.sydney_inspecion,
+    module.ireland_transit_gateway,
+    module.nvirginia_transit_gateway,
+    module.sydney_transit_gateway
+  ]
 }
 
 # ---------- GLOBAL RESOURCES - IAM ROLES ----------
-# EC2 IAM Instance Profile & VPC Flow Logs IAM Role
-module "iam" {
-  source = "../modules/iam"
+# # EC2 IAM Instance Profile & VPC Flow Logs IAM Role
+# module "iam" {
+#   source = "../modules/iam"
 
-  identifier = var.identifier
-}
+#   identifier = var.identifier
+# }
 
 # ---------- RESOURCES IN IRELAND ----------
 # Spoke VPCs - definition in variables.tf
 module "ireland_spoke_vpcs" {
   for_each  = var.ireland_spoke_vpcs
   source    = "aws-ia/vpc/aws"
-  version   = "= 4.3.0"
+  version   = "= 4.4.2"
   providers = { aws = aws.awsireland }
 
   name       = each.key
@@ -64,41 +78,53 @@ module "ireland_spoke_vpcs" {
   }
 
   subnets = {
-    vpc_endpoints   = { netmask = each.value.endpoint_subnet_netmask }
+    endpoints       = { netmask = each.value.endpoint_subnet_netmask }
     workload        = { netmask = each.value.workload_subnet_netmask }
     transit_gateway = { netmask = each.value.tgw_subnet_netmask }
   }
 }
 
 # Inspection VPC - definition in variables.tf
-module "ireland_inspection_vpc" {
-  source    = "aws-ia/vpc/aws"
-  version   = "= 4.3.0"
+module "ireland_inspecion" {
+  source    = "aws-ia/cloudwan/aws"
+  version   = "3.2.0"
   providers = { aws = aws.awsireland }
 
-  name       = var.ireland_inspection_vpc.name
-  cidr_block = var.ireland_inspection_vpc.cidr_block
-  az_count   = var.ireland_inspection_vpc.number_azs
+  core_network_arn = aws_networkmanager_core_network.core_network.arn
 
-  core_network = {
-    id  = aws_networkmanager_core_network.core_network.id
-    arn = aws_networkmanager_core_network.core_network.arn
-  }
-  core_network_routes = {
-    inspection = "0.0.0.0/0"
-  }
+  central_vpcs = {
+    inspection = {
+      type       = "inspection"
+      name       = var.ireland_inspection_vpc.name
+      cidr_block = var.ireland_inspection_vpc.cidr_block
+      az_count   = var.ireland_inspection_vpc.number_azs
 
-  subnets = {
-    inspection = { netmask = var.ireland_inspection_vpc.inspection_subnet_netmask }
-    core_network = {
-      netmask            = var.ireland_inspection_vpc.cnetwork_subnet_netmask
-      require_acceptance = false
+      subnets = {
+        endpoints = { netmask = var.ireland_inspection_vpc.inspection_subnet_netmask }
+        core_network = {
+          netmask = var.ireland_inspection_vpc.cnetwork_subnet_netmask
 
-      tags = {
-        domain = "postinspectionireland"
+          tags = { inspection = "true" }
+        }
       }
     }
   }
+
+  aws_network_firewall = {
+    inspection = {
+      name        = "anfw-ireland"
+      description = "AWS Network Firewall - eu-west-1"
+      policy_arn  = module.ireland_anfw_policy.policy_arn
+    }
+  }
+}
+
+# AWS Network Firewall policy
+module "ireland_anfw_policy" {
+  source    = "./modules/policy"
+  providers = { aws = aws.awsireland }
+
+  identifier = var.identifier
 }
 
 # Transit Gateway resources (RT, Association, Propagation and Cloud WAN peering)
@@ -106,53 +132,25 @@ module "ireland_transit_gateway" {
   source    = "./modules/transit_gateway"
   providers = { aws = aws.awsireland }
 
-  identifier                   = var.identifier
-  aws_region                   = "ireland"
-  tgw_asn                      = var.aws_regions.ireland.tgw_asn
-  spoke_vpc_tgw_attachment_ids = { for k, v in module.ireland_spoke_vpcs : k => v.transit_gateway_attachment_id }
-  core_network_id              = aws_networkmanager_core_network.core_network.id
-
-  depends_on = [aws_networkmanager_core_network_policy_attachment.core_network_policy_attachment]
+  identifier      = var.identifier
+  tgw_asn         = var.aws_regions.ireland.tgw_asn
+  core_network_id = aws_networkmanager_core_network.core_network.id
+  vpc_information = { for k, v in module.ireland_spoke_vpcs : k => {
+    segment                       = var.ireland_spoke_vpcs[k].segment
+    transit_gateway_attachment_id = v.transit_gateway_attachment_id
+  } }
 }
 
-# AWS Network Firewall resources (and routing)
-module "ireland_inspection" {
-  source    = "./modules/inspection"
-  providers = { aws = aws.awsireland }
-
-  identifier = var.identifier
-  vpc        = module.ireland_inspection_vpc
-  number_azs = var.ireland_inspection_vpc.number_azs
-}
-
-# EC2 Instances (in Spoke VPCs)
+# EC2 Instances (in Spoke VPCs) and EC2 Instance Connect endpoint
 module "ireland_compute" {
   for_each  = module.ireland_spoke_vpcs
   source    = "../modules/compute"
   providers = { aws = aws.awsireland }
 
-  identifier               = var.identifier
-  vpc_name                 = var.ireland_spoke_vpcs[each.key].name
-  vpc_id                   = each.value.vpc_attributes.id
-  vpc_subnets              = values({ for k, v in each.value.private_subnet_attributes_by_az : split("/", k)[1] => v.id if split("/", k)[0] == "workload" })
-  number_azs               = var.ireland_spoke_vpcs[each.key].number_azs
-  instance_type            = var.ireland_spoke_vpcs[each.key].instance_type
-  ec2_iam_instance_profile = module.iam.ec2_iam_instance_profile
-  ingress_vpc_cidr         = var.ireland_inspection_vpc.cidr_block
-}
-
-# SSM VPC endpoints (in Spoke VPCs)
-module "ireland_endpoints" {
-  for_each  = module.ireland_spoke_vpcs
-  source    = "../modules/endpoints"
-  providers = { aws = aws.awsireland }
-
-  identifier  = var.identifier
-  vpc_name    = var.ireland_spoke_vpcs[each.key].name
-  vpc_id      = each.value.vpc_attributes.id
-  vpc_cidr    = var.ireland_spoke_vpcs[each.key].cidr_block
-  vpc_subnets = values({ for k, v in each.value.private_subnet_attributes_by_az : split("/", k)[1] => v.id if split("/", k)[0] == "vpc_endpoints" })
-  aws_region  = var.aws_regions.ireland.code
+  identifier      = var.identifier
+  vpc_name        = each.key
+  vpc             = each.value
+  vpc_information = var.ireland_spoke_vpcs[each.key]
 }
 
 # ---------- RESOURCES IN N. VIRGINIA ----------
@@ -160,7 +158,7 @@ module "ireland_endpoints" {
 module "nvirginia_spoke_vpcs" {
   for_each  = var.nvirginia_spoke_vpcs
   source    = "aws-ia/vpc/aws"
-  version   = "= 4.3.0"
+  version   = "= 4.4.2"
   providers = { aws = aws.awsnvirginia }
 
   name       = each.key
@@ -173,41 +171,53 @@ module "nvirginia_spoke_vpcs" {
   }
 
   subnets = {
-    vpc_endpoints   = { netmask = each.value.endpoint_subnet_netmask }
+    endpoints       = { netmask = each.value.endpoint_subnet_netmask }
     workload        = { netmask = each.value.workload_subnet_netmask }
     transit_gateway = { netmask = each.value.tgw_subnet_netmask }
   }
 }
 
 # Inspection VPC - definition in variables.tf
-module "nvirginia_inspection_vpc" {
-  source    = "aws-ia/vpc/aws"
-  version   = "= 4.3.0"
+module "nvirginia_inspecion" {
+  source    = "aws-ia/cloudwan/aws"
+  version   = "3.2.0"
   providers = { aws = aws.awsnvirginia }
 
-  name       = var.nvirginia_inspection_vpc.name
-  cidr_block = var.nvirginia_inspection_vpc.cidr_block
-  az_count   = var.nvirginia_inspection_vpc.number_azs
+  core_network_arn = aws_networkmanager_core_network.core_network.arn
 
-  core_network = {
-    id  = aws_networkmanager_core_network.core_network.id
-    arn = aws_networkmanager_core_network.core_network.arn
-  }
-  core_network_routes = {
-    inspection = "0.0.0.0/0"
-  }
+  central_vpcs = {
+    inspection = {
+      type       = "inspection"
+      name       = var.nvirginia_inspection_vpc.name
+      cidr_block = var.nvirginia_inspection_vpc.cidr_block
+      az_count   = var.nvirginia_inspection_vpc.number_azs
 
-  subnets = {
-    inspection = { netmask = var.nvirginia_inspection_vpc.inspection_subnet_netmask }
-    core_network = {
-      netmask            = var.nvirginia_inspection_vpc.cnetwork_subnet_netmask
-      require_acceptance = false
+      subnets = {
+        endpoints = { netmask = var.nvirginia_inspection_vpc.inspection_subnet_netmask }
+        core_network = {
+          netmask = var.nvirginia_inspection_vpc.cnetwork_subnet_netmask
 
-      tags = {
-        domain = "postinspectionnvirginia"
+          tags = { inspection = "true" }
+        }
       }
     }
   }
+
+  aws_network_firewall = {
+    inspection = {
+      name        = "anfw-nvirginia"
+      description = "AWS Network Firewall - us-east-1"
+      policy_arn  = module.nvirginia_anfw_policy.policy_arn
+    }
+  }
+}
+
+# AWS Network Firewall policy
+module "nvirginia_anfw_policy" {
+  source    = "./modules/policy"
+  providers = { aws = aws.awsnvirginia }
+
+  identifier = var.identifier
 }
 
 # Transit Gateway resources (RT, Association, Propagation and Cloud WAN peering)
@@ -215,53 +225,25 @@ module "nvirginia_transit_gateway" {
   source    = "./modules/transit_gateway"
   providers = { aws = aws.awsnvirginia }
 
-  identifier                   = var.identifier
-  aws_region                   = "nvirginia"
-  tgw_asn                      = var.aws_regions.nvirginia.tgw_asn
-  spoke_vpc_tgw_attachment_ids = { for k, v in module.nvirginia_spoke_vpcs : k => v.transit_gateway_attachment_id }
-  core_network_id              = aws_networkmanager_core_network.core_network.id
-
-  depends_on = [aws_networkmanager_core_network_policy_attachment.core_network_policy_attachment]
+  identifier      = var.identifier
+  tgw_asn         = var.aws_regions.nvirginia.tgw_asn
+  core_network_id = aws_networkmanager_core_network.core_network.id
+  vpc_information = { for k, v in module.nvirginia_spoke_vpcs : k => {
+    segment                       = var.nvirginia_spoke_vpcs[k].segment
+    transit_gateway_attachment_id = v.transit_gateway_attachment_id
+  } }
 }
 
-# AWS Network Firewall resources (and routing)
-module "nvirginia_inspection" {
-  source    = "./modules/inspection"
-  providers = { aws = aws.awsnvirginia }
-
-  identifier = var.identifier
-  vpc        = module.nvirginia_inspection_vpc
-  number_azs = var.nvirginia_inspection_vpc.number_azs
-}
-
-# EC2 Instances (in Spoke VPCs)
+# EC2 Instances (in Spoke VPCs) and EC2 Instance Connect endpoint
 module "nvirginia_compute" {
   for_each  = module.nvirginia_spoke_vpcs
   source    = "../modules/compute"
   providers = { aws = aws.awsnvirginia }
 
-  identifier               = var.identifier
-  vpc_name                 = var.nvirginia_spoke_vpcs[each.key].name
-  vpc_id                   = each.value.vpc_attributes.id
-  vpc_subnets              = values({ for k, v in each.value.private_subnet_attributes_by_az : split("/", k)[1] => v.id if split("/", k)[0] == "workload" })
-  number_azs               = var.nvirginia_spoke_vpcs[each.key].number_azs
-  instance_type            = var.nvirginia_spoke_vpcs[each.key].instance_type
-  ec2_iam_instance_profile = module.iam.ec2_iam_instance_profile
-  ingress_vpc_cidr         = var.nvirginia_inspection_vpc.cidr_block
-}
-
-# SSM VPC endpoints (in Spoke VPCs)
-module "nvirginia_endpoints" {
-  for_each  = module.nvirginia_spoke_vpcs
-  source    = "../modules/endpoints"
-  providers = { aws = aws.awsnvirginia }
-
-  identifier  = var.identifier
-  vpc_name    = var.nvirginia_spoke_vpcs[each.key].name
-  vpc_id      = each.value.vpc_attributes.id
-  vpc_cidr    = var.nvirginia_spoke_vpcs[each.key].cidr_block
-  vpc_subnets = values({ for k, v in each.value.private_subnet_attributes_by_az : split("/", k)[1] => v.id if split("/", k)[0] == "vpc_endpoints" })
-  aws_region  = var.aws_regions.nvirginia.code
+  identifier      = var.identifier
+  vpc_name        = each.key
+  vpc             = each.value
+  vpc_information = var.nvirginia_spoke_vpcs[each.key]
 }
 
 # ---------- RESOURCES IN SYDNEY ----------
@@ -269,7 +251,7 @@ module "nvirginia_endpoints" {
 module "sydney_spoke_vpcs" {
   for_each  = var.sydney_spoke_vpcs
   source    = "aws-ia/vpc/aws"
-  version   = "= 4.3.0"
+  version   = "= 4.4.2"
   providers = { aws = aws.awssydney }
 
   name       = each.key
@@ -282,41 +264,53 @@ module "sydney_spoke_vpcs" {
   }
 
   subnets = {
-    vpc_endpoints   = { netmask = each.value.endpoint_subnet_netmask }
+    endpoints       = { netmask = each.value.endpoint_subnet_netmask }
     workload        = { netmask = each.value.workload_subnet_netmask }
     transit_gateway = { netmask = each.value.tgw_subnet_netmask }
   }
 }
 
 # Inspection VPC - definition in variables.tf
-module "sydney_inspection_vpc" {
-  source    = "aws-ia/vpc/aws"
-  version   = "= 4.3.0"
+module "sydney_inspecion" {
+  source    = "aws-ia/cloudwan/aws"
+  version   = "3.2.0"
   providers = { aws = aws.awssydney }
 
-  name       = var.sydney_inspection_vpc.name
-  cidr_block = var.sydney_inspection_vpc.cidr_block
-  az_count   = var.sydney_inspection_vpc.number_azs
+  core_network_arn = aws_networkmanager_core_network.core_network.arn
 
-  core_network = {
-    id  = aws_networkmanager_core_network.core_network.id
-    arn = aws_networkmanager_core_network.core_network.arn
-  }
-  core_network_routes = {
-    inspection = "0.0.0.0/0"
-  }
+  central_vpcs = {
+    inspection = {
+      type       = "inspection"
+      name       = var.sydney_inspection_vpc.name
+      cidr_block = var.sydney_inspection_vpc.cidr_block
+      az_count   = var.sydney_inspection_vpc.number_azs
 
-  subnets = {
-    inspection = { netmask = var.sydney_inspection_vpc.inspection_subnet_netmask }
-    core_network = {
-      netmask            = var.sydney_inspection_vpc.cnetwork_subnet_netmask
-      require_acceptance = false
+      subnets = {
+        endpoints = { netmask = var.sydney_inspection_vpc.inspection_subnet_netmask }
+        core_network = {
+          netmask = var.sydney_inspection_vpc.cnetwork_subnet_netmask
 
-      tags = {
-        domain = "postinspectionsydney"
+          tags = { inspection = "true" }
+        }
       }
     }
   }
+
+  aws_network_firewall = {
+    inspection = {
+      name        = "anfw-sydney"
+      description = "AWS Network Firewall - ap-southeast-2"
+      policy_arn  = module.sydney_anfw_policy.policy_arn
+    }
+  }
+}
+
+# AWS Network Firewall policy
+module "sydney_anfw_policy" {
+  source    = "./modules/policy"
+  providers = { aws = aws.awssydney }
+
+  identifier = var.identifier
 }
 
 # Transit Gateway resources (RT, Association, Propagation and Cloud WAN peering)
@@ -324,52 +318,24 @@ module "sydney_transit_gateway" {
   source    = "./modules/transit_gateway"
   providers = { aws = aws.awssydney }
 
-  identifier                   = var.identifier
-  aws_region                   = "sydney"
-  tgw_asn                      = var.aws_regions.sydney.tgw_asn
-  spoke_vpc_tgw_attachment_ids = { for k, v in module.sydney_spoke_vpcs : k => v.transit_gateway_attachment_id }
-  core_network_id              = aws_networkmanager_core_network.core_network.id
-
-  depends_on = [aws_networkmanager_core_network_policy_attachment.core_network_policy_attachment]
+  identifier      = var.identifier
+  tgw_asn         = var.aws_regions.sydney.tgw_asn
+  core_network_id = aws_networkmanager_core_network.core_network.id
+  vpc_information = { for k, v in module.sydney_spoke_vpcs : k => {
+    segment                       = var.sydney_spoke_vpcs[k].segment
+    transit_gateway_attachment_id = v.transit_gateway_attachment_id
+  } }
 }
 
-# AWS Network Firewall resources (and routing)
-module "sydney_inspection" {
-  source    = "./modules/inspection"
-  providers = { aws = aws.awssydney }
-
-  identifier = var.identifier
-  vpc        = module.sydney_inspection_vpc
-  number_azs = var.sydney_inspection_vpc.number_azs
-}
-
-# EC2 Instances (in Spoke VPCs)
+# EC2 Instances (in Spoke VPCs) and EC2 Instance Connect endpoint
 module "sydney_compute" {
   for_each  = module.sydney_spoke_vpcs
   source    = "../modules/compute"
   providers = { aws = aws.awssydney }
 
-  identifier               = var.identifier
-  vpc_name                 = var.sydney_spoke_vpcs[each.key].name
-  vpc_id                   = each.value.vpc_attributes.id
-  vpc_subnets              = values({ for k, v in each.value.private_subnet_attributes_by_az : split("/", k)[1] => v.id if split("/", k)[0] == "workload" })
-  number_azs               = var.sydney_spoke_vpcs[each.key].number_azs
-  instance_type            = var.sydney_spoke_vpcs[each.key].instance_type
-  ec2_iam_instance_profile = module.iam.ec2_iam_instance_profile
-  ingress_vpc_cidr         = var.sydney_inspection_vpc.cidr_block
-}
-
-# SSM VPC endpoints (in Spoke VPCs)
-module "sydney_endpoints" {
-  for_each  = module.sydney_spoke_vpcs
-  source    = "../modules/endpoints"
-  providers = { aws = aws.awssydney }
-
-  identifier  = var.identifier
-  vpc_name    = var.sydney_spoke_vpcs[each.key].name
-  vpc_id      = each.value.vpc_attributes.id
-  vpc_cidr    = var.sydney_spoke_vpcs[each.key].cidr_block
-  vpc_subnets = values({ for k, v in each.value.private_subnet_attributes_by_az : split("/", k)[1] => v.id if split("/", k)[0] == "vpc_endpoints" })
-  aws_region  = var.aws_regions.sydney.code
+  identifier      = var.identifier
+  vpc_name        = each.key
+  vpc             = each.value
+  vpc_information = var.sydney_spoke_vpcs[each.key]
 }
 

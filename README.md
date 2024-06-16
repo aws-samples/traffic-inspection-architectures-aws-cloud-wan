@@ -1,305 +1,357 @@
 # Traffic Inspection Architectures with AWS Cloud WAN
 
-This repository contains code (in AWS CloudFormation and Terraform) to deploy several inspection architectures using AWS Cloud WAN - with AWS Network Firewall as inspection solution. The use cases covered are the following ones:
+This repository contains code (in AWS CloudFormation and Terraform) to deploy several inspection architectures using [AWS Cloud WAN](https://aws.amazon.com/cloud-wan/) - with [AWS Network Firewall](https://aws.amazon.com/network-firewall/) as inspection solution. The use cases covered are the following ones:
 
 * Centralized Outbound.
-* East/West traffic, with both Spoke VPCs and Inspection VPCs attached to AWS Cloud WAN.
-* East/West traffic, with both Spoke VPCs and Inspection VPCs attached to AWS Transit Gateway and peered with AWS Cloud WAN.
-* East/West traffic, with Spoke VPCs attached to a peered AWS Transit Gateway and Inspection VPCs attached to AWS Cloud WAN.
+* East/West traffic, with both spoke VPCs and inspection VPCs attached to AWS Cloud WAN.
+* East/West traffic, with both spoke VPCs and inspection VPCs attached to [AWS Transit Gateway](https://aws.amazon.com/transit-gateway/) and peered with AWS Cloud WAN.
+* East/West traffic, with spoke VPCs attached to a peered AWS Transit Gateway and inspection VPCs attached to AWS Cloud WAN.
 
-In all the examples we are deploying resources in three AWS Regions: N. Virginia (us-east-1), Ireland (eu-west-1), and Sydney (ap-southeast-2)
+Resources are deployed in three AWS Regions: **N. Virginia (us-east-1)**, **Ireland (eu-west-1)**, and **Sydney (ap-southeast-2)**. For specific information about how to deploy each use case, please check the corresponding use case's folder under the corresponding IaC's framework folder (*cloudformation* or *terraform*) you want to use.
+
+The examples take advantage of Cloud WAN's [service insertion](https://docs.aws.amazon.com/network-manager/latest/cloudwan/cloudwan-policy-service-insertion.html) feature to simplify the configuration of inspection routes (east-west and north-south) between VPCs within the same or different routing domains.
 
 ## Use cases
 
+In all use cases, you will find two routing domains: **production** and **development**. The inspection requirements are the following ones:
+
+* VPCs within the **production** segment will be inspected.
+* Inter-segment traffic will be inspected.
+* VPCs within the **development** segment can talk between each other directly.
+
+This repository does not focus on AWS Network Firewall's policy configuration, therefore the policy rules configured are simple and only used to test connectivity. 
+
+* For egress traffic, only traffic to *.amazon.com* domains is allowed.
+* For east-west traffic, any ICMP packets are allowed, alerting those flows that are going between different routing domains (*production* to *development*).
+
 ### Centralized Outbound
 
-* 1 segment per routing domain, plus 1 segment for the post-inspection (*security* in the example)
-* Spoke VPCs are attached to the corresponding segment, and the Inspection VPCs to the *security* segment.
-* In each routing domain's segment, there's a static route (0.0.0.0/0) pointing to the Inspection VPC attachments. Traffic will be routed to the local Inspection VPC attachment.
-* Routing domain's segments share their routes with the *security* segment, so the return traffic can reach the proper VPC.
+The Core Network's policy creates the following resources:
+
+* 1 [segment](https://docs.aws.amazon.com/network-manager/latest/cloudwan/cloudwan-policy-segments.html) per routing domain - *production* (isolated) and *development*. Core Network's policy includes an attachment policy rule that maps each spoke VPCs to the corresponding segment if the attachment contains the following tag: *domain={segment_name}*
+* 1 [network function group](https://docs.aws.amazon.com/network-manager/latest/cloudwan/cloudwan-policy-network-function-groups.html) (NFG) for the inspection VPCs. Core Network's policy includes an attachment policy rule that associates the inspection VPC to the NFG if the attachment includes the following tag: *inspection=true*.
+* **Service Insertion rules**: in each routing domain's segment, a [send-to](https://docs.aws.amazon.com/network-manager/latest/cloudwan/cloudwan-policy-service-insertion.html#:~:text=insertion%2Denabled%20segment.-,Send%20to,-%E2%80%94%20Traffic%20flows%20north) action is created to send the default traffic (0.0.0.0/0 and ::/0) to the inspection VPCs.
 
 ![Centralized Outbound](./images/centralized_outbound.png)
 
 ```json
 {
-  "version": "2021.12",
-  "core-network-configuration": {
-    "asn-ranges": [
-      "64520-65525"
-    ],
-    "edge-locations": [
-      { "location": "eu-west-1" },
-      { "location": "us-east-1" },
-      { "location": "ap-southeast-2" }
-    ],
-    "vpn-ecmp-support": false
-  },
-   "segments": [
-    {
-      "name": "dev",
-      "isolate-attachments": false,
-      "require-attachment-acceptance": false
-    },
-    {
-      "name": "prod",
-      "isolate-attachments": false,
-      "require-attachment-acceptance": false
-    },
-    {
-      "name": "security",
-      "isolate-attachments": false,
-      "require-attachment-acceptance": false
-    }
-  ],
-  "attachment-policies": [
-    {
-      "action": {
-        "association-method": "tag",
-        "tag-value-of-key": "domain"
-      },
-      "condition-logic": "or",
-      "conditions": [
+    "version": "2021.12",
+    "core-network-configuration": {
+      "vpn-ecmp-support": true,
+      "asn-ranges": [
+        "64520-65525"
+      ],
+      "edge-locations": [
         {
-          "key": "domain",
-          "type": "tag-exists"
+          "location": "eu-west-1"
+        },
+        {
+          "location": "us-east-1"
+        },
+        {
+          "location": "ap-southeast-2"
         }
-      ],
-      "rule-number": 100
-    }
-  ],
-  "segment-actions": [
-    {
-      "action": "share",
-      "mode": "attachment-route",
-      "segment": "dev",
-      "share-with": [
-        "security"
       ]
     },
-    {
-      "action": "share",
-      "mode": "attachment-route",
-      "segment": "prod",
-      "share-with": [
-        "security"
-      ]
-    },
-    {
-      "action": "create-route",
-      "destination-cidr-blocks": [
-        "0.0.0.0/0"
-      ],
-      "destinations": [
-        "attachment-XXX",
-        "attachment-YYY",
-        "attachment-ZZZ"
-      ],
-      "segment": "dev"
-    },
-    {
-      "action": "create-route",
-      "destination-cidr-blocks": [
-        "0.0.0.0/0"
-      ],
-      "destinations": [
-        "attachment-XXX",
-        "attachment-YYY",
-        "attachment-ZZZ"
-      ],
-      "segment": "prod"
-    }
-  ]
+    "segments": [
+      {
+        "name": "production",
+        "require-attachment-acceptance": false,
+        "isolate-attachments": true
+      },
+      {
+        "name": "development",
+        "require-attachment-acceptance": false
+      }
+    ],
+    "network-function-groups": [
+      {
+        "name": "inspectionVpcs",
+        "require-attachment-acceptance": false
+      }
+    ],
+    "segment-actions": [
+      {
+        "action": "send-to",
+        "segment": "production",
+        "via": {
+          "network-function-groups": [
+            "inspectionVpcs"
+          ]
+        }
+      },
+      {
+        "action": "send-to",
+        "segment": "development",
+        "via": {
+          "network-function-groups": [
+            "inspectionVpcs"
+          ]
+        }
+      }
+    ],
+    "attachment-policies": [
+      {
+        "rule-number": 100,
+        "condition-logic": "or",
+        "conditions": [
+          {
+            "type": "tag-value",
+            "operator": "equals",
+            "key": "inspection",
+            "value": "true"
+          }
+        ],
+        "action": {
+            "add-to-network-function-group": "inspectionVpcs"
+        }
+      },
+      {
+        "rule-number": 200,
+        "condition-logic": "or",
+        "conditions": [
+          {
+            "type": "tag-exists",
+            "key": "domain"
+          }
+        ],
+        "action": {
+          "association-method": "tag",
+          "tag-value-of-key": "domain"
+        }
+      }
+    ]
 }
 ```
 
-### East/West traffic, with both Spoke VPCs and Inspection VPCs attached to AWS Cloud WAN.
+### East/West traffic, with both Spoke VPCs and Inspection VPCs attached to AWS Cloud WAN
 
-* 1 segment per routing domain, plus 1 segment for the post-inspection per AWS Region.
-  * In the example we are creating resources in 3 AWS Regions, so 3 *security* segments are needed.
-  * Each Inspection VPC will be attached to a dedicated *security* segment, although all segments need to be created in all the AWS Regions (so they can reach all the Spoke VPCs).
-* In each routing domain's segment, there's a static route (0.0.0.0/0) pointing to the Inspection VPC attachments. 
-  * Traffic will be routed to the local Inspection VPC attachment.
-  * VPCs within the same segment can talk between each other by default. If you want inter-routing domain traffic inspection, create an isolated segment.
-* Static routes are created in each AWS Region *security* segment. 
-  * These static routes point to the other AWS Region Inspection VPC attachments when the traffic is destined to the Spoke VPCs of that specific AWS Region.
-  * Inter-region traffic needs to be inspected twice (in both Inspection VPCs) to avoid asymmetric traffic.
-* Routing domain's segments share their routes with the *security* segment, so the return traffic can reach the proper VPC - when doing intra-Region inspection.
+The Core Network's policy creates the following resources:
 
-![East-West](./images/east_west.png)
+* 1 [segment](https://docs.aws.amazon.com/network-manager/latest/cloudwan/cloudwan-policy-segments.html) per routing domain - *production* (isolated) and *development*. Core Network's policy includes an attachment policy rule that maps each spoke VPCs to the corresponding segment if the attachment contains the following tag: *domain={segment_name}*
+* 1 [network function group](https://docs.aws.amazon.com/network-manager/latest/cloudwan/cloudwan-policy-network-function-groups.html) (NFG) for the inspection VPCs. Core Network's policy includes an attachment policy rule that associates the inspection VPC to the NFG if the attachment includes the following tag: *inspection=true*.
+* **Service Insertion rules**: one [send-via](https://docs.aws.amazon.com/network-manager/latest/cloudwan/cloudwan-policy-service-insertion.html#:~:text=north%2Dsouth%20traffic.-,Send%20via,-%E2%80%94%20Traffic%20flows%20east) action to inspect the traffic between VPCs in the *production* segment, and between the *production* and *development* segments.
+
+The *send-via* action allows the use of 1 (*single-hop*) or 2 (*dual-hop*) inspection VPCs when inspecting traffic between AWS. By default, the repository uses the dual-hop mode, but you can also find the policy to use single-hop.
+
+#### Dual-hop inspection 
+
+![East-West](./images/east_west_dualhop.png)
   
 ```json
 {
-  "version": "2021.12",
-  "core-network-configuration": {
-    "asn-ranges": [
-      "64520-65525"
-    ],
-    "edge-locations": [
-      { "location": "eu-west-1" },
-      { "location": "us-east-1" },
-      { "location": "ap-southeast-2" }
-    ],
-    "vpn-ecmp-support": false
-  },
-  "segments": [
-    {
-      "name": "prod",
-      "isolate-attachments": false,
-      "require-attachment-acceptance": false
-    },
-    {
-      "name": "dev",
-      "isolate-attachments": false,
-      "require-attachment-acceptance": false
-    },
-    {
-      "name": "inspectionireland",
-      "isolate-attachments": false,
-      "require-attachment-acceptance": false
-    },
-    {
-      "name": "inspectionnvirginia",
-      "isolate-attachments": false,
-      "require-attachment-acceptance": false
-    },
-    {
-      "name": "inspectionsydney",
-      "isolate-attachments": false,
-      "require-attachment-acceptance": false
-    }
-  ],
-  "attachment-policies": [
-    {
-      "action": {
-        "association-method": "tag",
-        "tag-value-of-key": "domain"
-      },
-      "condition-logic": "or",
-      "conditions": [
+    "version": "2021.12",
+    "core-network-configuration": {
+      "vpn-ecmp-support": true,
+      "asn-ranges": [
+        "64520-65525"
+      ],
+      "edge-locations": [
         {
-          "key": "domain",
-          "type": "tag-exists"
+          "location": "eu-west-1"
+        },
+        {
+          "location": "us-east-1"
+        },
+        {
+          "location": "ap-southeast-2"
         }
-      ],
-      "rule-number": 100
-    }
-  ],
-  "segment-actions": [
-    {
-      "action": "share",
-      "mode": "attachment-route",
-      "segment": "dev",
-      "share-with": [
-        "inspectionsydney",
-        "inspectionnvirginia",
-        "inspectionireland"
       ]
     },
-    {
-      "action": "share",
-      "mode": "attachment-route",
-      "segment": "prod",
-      "share-with": [
-        "inspectionsydney",
-        "inspectionnvirginia",
-        "inspectionireland"
-      ]
-    },
-    {
-      "action": "create-route",
-      "destination-cidr-blocks": [
-        "0.0.0.0/0"
-      ],
-      "destinations": [
-        "attachment-XXX",
-        "attachment-YYY",
-        "attachment-ZZZ"
-      ],
-      "segment": "dev"
-    },
-    {
-      "action": "create-route",
-      "destination-cidr-blocks": [
-        "0.0.0.0/0"
-      ],
-      "destinations": [
-        "attachment-XXX",
-        "attachment-YYY",
-        "attachment-ZZZ"
-      ],
-      "segment": "prod"
-    },
-    {
-      "action": "create-route",
-      "destination-cidr-blocks": [
-        "10.10.1.0/24",
-        "10.10.0.0/24"
-      ],
-      "destinations": [
-        "attachment-YYY"
-      ],
-      "segment": "inspectionireland"
-    },
-    {
-      "action": "create-route",
-      "destination-cidr-blocks": [
-        "10.20.1.0/24",
-        "10.20.0.0/24"
-      ],
-      "destinations": [
-        "attachment-XXX"
-      ],
-      "segment": "inspectionireland"
-    },
-    {
-      "action": "create-route",
-      "destination-cidr-blocks": [
-        "10.0.1.0/24",
-        "10.0.0.0/24"
-      ],
-      "destinations": [
-        "attachment-ZZZ"
-      ],
-      "segment": "inspectionnvirginia"
-    },
-    {
-      "action": "create-route",
-      "destination-cidr-blocks": [
-        "10.20.1.0/24",
-        "10.20.0.0/24"
-      ],
-      "destinations": [
-        "attachment-XXX"
-      ],
-      "segment": "inspectionnvirginia"
-    },
-    {
-      "action": "create-route",
-      "destination-cidr-blocks": [
-        "10.0.1.0/24",
-        "10.0.0.0/24"
-      ],
-      "destinations": [
-        "attachment-ZZZ"
-      ],
-      "segment": "inspectionsydney"
-    },
-    {
-      "action": "create-route",
-      "destination-cidr-blocks": [
-        "10.10.1.0/24",
-        "10.10.0.0/24"
-      ],
-      "destinations": [
-        "attachment-YYY"
-      ],
-      "segment": "inspectionsydney"
-    }
-  ]
+    "segments": [
+      {
+        "name": "production",
+        "require-attachment-acceptance": false,
+        "isolate-attachments": true
+      },
+      {
+        "name": "development",
+        "require-attachment-acceptance": false
+      }
+    ],
+    "network-function-groups": [
+      {
+        "name": "inspectionVpcs",
+        "require-attachment-acceptance": false
+      }
+    ],
+    "segment-actions": [
+      {
+        "action": "send-via",
+        "segment": "production",
+        "mode": "dual-hop",
+        "when-sent-to": {
+          "segments": "*"
+        },
+        "via": {
+          "network-function-groups": [
+            "inspectionVpcs"
+          ]
+        }
+      }
+    ],
+    "attachment-policies": [
+      {
+        "rule-number": 100,
+        "condition-logic": "or",
+        "conditions": [
+          {
+            "type": "tag-value",
+            "operator": "equals",
+            "key": "inspection",
+            "value": "true"
+          }
+        ],
+        "action": {
+            "add-to-network-function-group": "inspectionVpcs"
+        }
+      },
+      {
+        "rule-number": 200,
+        "condition-logic": "or",
+        "conditions": [
+          {
+            "type": "tag-exists",
+            "key": "domain"
+          }
+        ],
+        "action": {
+          "association-method": "tag",
+          "tag-value-of-key": "domain"
+        }
+      }
+    ]
 }
 ```
 
-### East/West traffic, with both Spoke VPCs and Inspection VPCs attached to AWS Transit Gateway and peered with AWS Cloud WAN.
+#### Single-hop inspection
+
+In the example in this repository, the following matrix is used to determine which Inspection VPC is used for traffic inspection:
+
+| -------------- | us-east-1     | eu-west-1     | ap-southeast-2     |
+| us-east-1      | **us-east-1** | **us-east-1** | **us-east-1**      |
+| eu-west-1      | **us-east-1** | **eu-west-1** | **eu-west-1**      |
+| ap-southeast-2 | **us-east-1** | **eu-west-1** | **ap-southeast-2** |
+
+![East-West-SingleHop](../../images/east_west_singlehop.png)
+
+```json
+{
+    "version": "2021.12",
+    "core-network-configuration": {
+      "vpn-ecmp-support": true,
+      "asn-ranges": [
+        "64520-65525"
+      ],
+      "edge-locations": [
+        {
+          "location": "eu-west-1"
+        },
+        {
+          "location": "us-east-1"
+        },
+        {
+          "location": "ap-southeast-2"
+        }
+      ]
+    },
+    "segments": [
+      {
+        "name": "production",
+        "require-attachment-acceptance": false,
+        "isolate-attachments": true
+      },
+      {
+        "name": "development",
+        "require-attachment-acceptance": false
+      }
+    ],
+    "network-function-groups": [
+      {
+        "name": "inspectionVpcs",
+        "require-attachment-acceptance": false
+      }
+    ],
+    "segment-actions": [
+      {
+        "action": "send-via",
+        "segment": "production",
+        "mode": "single-hop",
+        "when-sent-to": {
+          "segments": "*"
+        },
+        "via": {
+          "network-function-groups": [
+            "inspectionVpcs"
+          ],
+          "with-edge-overrides": [
+            {
+              "edge-sets": [
+                [
+                  "us-east-1",
+                  "eu-west-1"
+                ]
+              ],
+              "use-edge-location": "us-east-1"
+            },
+            {
+              "edge-sets": [
+                [
+                  "us-east-1",
+                  "ap-southeast-2"
+                ]
+              ],
+              "use-edge-location": "us-east-1"
+            },
+            {
+              "edge-sets": [
+                [
+                  "ap-southeast-2",
+                  "eu-west-1"
+                ]
+              ],
+              "use-edge-location": "eu-west-1"
+            }
+          ]
+        }
+      }
+    ],
+    "attachment-policies": [
+      {
+        "rule-number": 100,
+        "condition-logic": "or",
+        "conditions": [
+          {
+            "type": "tag-value",
+            "operator": "equals",
+            "key": "inspection",
+            "value": "true"
+          }
+        ],
+        "action": {
+            "add-to-network-function-group": "inspectionVpcs"
+        }
+      },
+      {
+        "rule-number": 200,
+        "condition-logic": "or",
+        "conditions": [
+          {
+            "type": "tag-exists",
+            "key": "domain"
+          }
+        ],
+        "action": {
+          "association-method": "tag",
+          "tag-value-of-key": "domain"
+        }
+      }
+    ]
+}
+```
+
+### East/West traffic, with both Spoke VPCs and Inspection VPCs attached to AWS Transit Gateway and peered with AWS Cloud WAN
 
 * Spoke VPCs and Inspection VPC in each AWS Region are attached to the Transit Gateway.
   * Spoke VPC attachments are associated with a *pre-inspection* route table with a static route (0.0.0.0/0) pointing to the Inspection VPC.
@@ -408,14 +460,22 @@ In all the examples we are deploying resources in three AWS Regions: N. Virginia
 
 ### East/West traffic, with Spoke VPCs attached to a peered AWS Transit Gateway and Inspection VPCs attached to AWS Cloud WAN.
 
-* Spoke VPCs in each AWS Region are attached to the Transit Gateway.
-  * The VPC attachments are associated with a *pre-inspection* route table, which gets propagated the route to the local Inspection VPC via the peering with the Core Network.
-  * The VPC attachments propagate their routes to a *post-inspection* route table, propagating these routes to the Core Network via the peering.
-* The Inspection VPCs are attached to the Core Network.
-* In the Core Network there are two type of segments:
-  * One *pre-inspection* segment with a static route (0.0.0.0/0) to the Inspection VPCs.
-  * One *post-inspection* segment per AWS Region, where each Inspection VPC attachment will be associated. In each segment, the local Spoke VPC CIDRs will be propagated from the peering with the Transit Gateway.
-  * In each *post-inspection* segment, a static route to the other AWS Region CIDRs (pointing to that AWS Region Inspection VPC) is created. That way, inter-Region traffic is inspected in both AWS Regions - avoiding asymmetric traffic.
+The following resources are created:
+
+* In each AWS Region, the spoke VPCs are attached to a Transit Gateway. Three TGW route tables are created:
+  * The spoke VPCs of the production routing domain are associated to the **production* route table.
+  * The spoke VPCs of the development routing domain are associated and propagate their routes to the *development* route table.
+  * A third route table (*prod_routes*) is created to inject the production spoke VPCs to Cloud WAN. This enables Cloud WAN to learn the production VPCs CIDRs to create the corresponding routes when configuring the Service Insertion actions.
+  * Each Transit Gateway is peered with Cloud WAN.
+* The Cloud WAN policy configures the following:
+  * 1 [segment](https://docs.aws.amazon.com/network-manager/latest/cloudwan/cloudwan-policy-segments.html) per routing domain - *production* (isolated) and *development*. Core Network's policy includes an attachment policy rule that associates each Transit Gateway route table attachment to the corresponding segment if the attachment contains the following tag: *domain={segment_name}*. In the example, the *production* and *prod_routes* TGW route table are associated to the *production* segment, and the *development* route table is associated to the *development* segment.
+  * 1 [network function group](https://docs.aws.amazon.com/network-manager/latest/cloudwan/cloudwan-policy-network-function-groups.html) (NFG) for the inspection VPCs. Core Network's policy includes an attachment policy rule that associates the inspection VPC to the NFG if the attachment includes the following tag: *inspection=true*.
+  * **Service Insertion rules**: 
+    * One [send-via](https://docs.aws.amazon.com/network-manager/latest/cloudwan/cloudwan-policy-service-insertion.html#:~:text=north%2Dsouth%20traffic.-,Send%20via,-%E2%80%94%20Traffic%20flows%20east) action to inspect the traffic between VPCs in the *production* segment, and between the *production* and *development* segments.
+    * With only the send-via action, you will see in the TGWs a path to connect VPCs within the same routing domain (*production* via inspection, *development* direct path) and within different routing domains in different Regions (via inspection). However, routes between segments in the same Region (via inspection) won't be propagated.
+    * To allow communication between routing domains in the same Region, two [send-to](https://docs.aws.amazon.com/network-manager/latest/cloudwan/cloudwan-policy-service-insertion.html#:~:text=insertion%2Denabled%20segment.-,Send%20to,-%E2%80%94%20Traffic%20flows%20north) actions are created to send the default traffic (0.0.0.0/0 and ::/0) to the inspection VPCs.
+
+Given we need to create a send-to action via the NFG, the east-west traffic inspection (send-via) between Regions can only be done using *single-hop* configuration. This is because a NFG can only be used in one mode (either *single-hop* or *dual-hop*), but not both at the same time.
 
 ![East-West](./images/east_west_tgw_spoke_vpcs.png)
 
@@ -423,132 +483,130 @@ In all the examples we are deploying resources in three AWS Regions: N. Virginia
 {
   "version": "2021.12",
   "core-network-configuration": {
+    "vpn-ecmp-support": true,
     "asn-ranges": [
       "64520-65525"
     ],
     "edge-locations": [
-      { "location": "eu-west-1" },
-      { "location": "us-east-1" },
-      { "location": "ap-southeast-2" }
-    ],
-    "vpn-ecmp-support": false
+      {
+        "location": "eu-west-1"
+      },
+      {
+        "location": "us-east-1"
+      },
+      {
+        "location": "ap-southeast-2"
+      }
+    ]
   },
   "segments": [
     {
-      "name": "preinspection",
-      "isolate-attachments": false,
-      "require-attachment-acceptance": false
+      "name": "production",
+      "require-attachment-acceptance": false,
+      "isolate-attachments": true
     },
     {
-      "name": "postinspectionireland",
-      "isolate-attachments": false,
-      "require-attachment-acceptance": false
-    },
-    {
-      "name": "postinspectionnvirginia",
-      "isolate-attachments": false,
-      "require-attachment-acceptance": false
-    },
-    {
-      "name": "postinspectionsydney",
-      "isolate-attachments": false,
+      "name": "development",
       "require-attachment-acceptance": false
     }
   ],
-  "attachment-policies": [
+  "network-function-groups": [
     {
-      "action": {
-        "association-method": "tag",
-        "tag-value-of-key": "domain"
-      },
-      "condition-logic": "or",
-      "conditions": [
-        {
-          "key": "domain",
-          "type": "tag-exists"
-        }
-      ],
-      "rule-number": 100
+      "name": "inspectionVpcs",
+      "require-attachment-acceptance": false
     }
   ],
   "segment-actions": [
     {
-      "action": "create-route",
-      "destination-cidr-blocks": [
-        "0.0.0.0/0"
-      ],
-      "destinations": [
-        "attachment-XXX",
-        "attachment-YYY",
-        "attachment-ZZZ"
-      ],
-      "segment": "preinspection"
+      "action": "send-to",
+      "segment": "production",
+      "via": {
+        "network-function-groups": [
+          "inspectionVpcs"
+        ]
+      }
     },
     {
-      "action": "create-route",
-      "destination-cidr-blocks": [
-        "10.10.1.0/24",
-        "10.10.0.0/24"
-      ],
-      "destinations": [
-        "attachment-XXX"
-      ],
-      "segment": "postinspectionireland"
+      "action": "send-to",
+      "segment": "development",
+      "via": {
+        "network-function-groups": [
+          "inspectionVpcs"
+        ]
+      }
     },
     {
-      "action": "create-route",
-      "destination-cidr-blocks": [
-        "10.20.1.0/24",
-        "10.20.0.0/24"
+      "action": "send-via",
+      "segment": "production",
+      "mode": "single-hop",
+      "when-sent-to": {
+        "segments": "*"
+      },
+      "via": {
+        "network-function-groups": [
+          "inspectionVpcs"
+        ],
+        "with-edge-overrides": [
+          {
+            "edge-sets": [
+              [
+                "us-east-1",
+                "eu-west-1"
+              ]
+            ],
+            "use-edge-location": "us-east-1"
+          },
+          {
+            "edge-sets": [
+              [
+                "us-east-1",
+                "ap-southeast-2"
+              ]
+            ],
+            "use-edge-location": "us-east-1"
+          },
+          {
+            "edge-sets": [
+              [
+                "ap-southeast-2",
+                "eu-west-1"
+              ]
+            ],
+            "use-edge-location": "eu-west-1"
+          }
+        ]
+      }
+    }
+  ],
+  "attachment-policies": [
+    {
+      "rule-number": 100,
+      "condition-logic": "or",
+      "conditions": [
+        {
+          "type": "tag-value",
+          "operator": "equals",
+          "key": "inspection",
+          "value": "true"
+        }
       ],
-      "destinations": [
-        "attachment-YYY"
-      ],
-      "segment": "postinspectionireland"
+      "action": {
+        "add-to-network-function-group": "inspectionVpcs"
+      }
     },
     {
-      "action": "create-route",
-      "destination-cidr-blocks": [
-        "10.0.1.0/24",
-        "10.0.0.0/24"
+      "rule-number": 200,
+      "condition-logic": "or",
+      "conditions": [
+        {
+          "type": "tag-exists",
+          "key": "domain"
+        }
       ],
-      "destinations": [
-        "attachment-ZZZ"
-      ],
-      "segment": "postinspectionnvirginia"
-    },
-    {
-      "action": "create-route",
-      "destination-cidr-blocks": [
-        "10.20.1.0/24",
-        "10.20.0.0/24"
-      ],
-      "destinations": [
-        "attachment-YYY"
-      ],
-      "segment": "postinspectionnvirginia"
-    },
-    {
-      "action": "create-route",
-      "destination-cidr-blocks": [
-        "10.0.1.0/24",
-        "10.0.0.0/24"
-      ],
-      "destinations": [
-        "attachment-ZZZ"
-      ],
-      "segment": "postinspectionsydney"
-    },
-    {
-      "action": "create-route",
-      "destination-cidr-blocks": [
-        "10.10.1.0/24",
-        "10.10.0.0/24"
-      ],
-      "destinations": [
-        "attachment-XXX"
-      ],
-      "segment": "postinspectionsydney"
+      "action": {
+        "association-method": "tag",
+        "tag-value-of-key": "domain"
+      }
     }
   ]
 }

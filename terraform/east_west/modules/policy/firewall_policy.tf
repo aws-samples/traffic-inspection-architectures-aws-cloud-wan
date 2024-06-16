@@ -1,13 +1,12 @@
 /* Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  SPDX-License-Identifier: MIT-0 */
 
-# --- centralized_outbound/modules/inspection/firewall_policy.tf ---
+# --- east_west/modules/policy/firewall_policy.tf ---
 
 resource "aws_networkfirewall_firewall_policy" "anfw_policy" {
   name = "firewall-policy-${var.identifier}"
 
   firewall_policy {
-
     # Stateless configuration
     stateless_default_actions          = ["aws:forward_to_sfe"]
     stateless_fragment_default_actions = ["aws:forward_to_sfe"]
@@ -24,7 +23,7 @@ resource "aws_networkfirewall_firewall_policy" "anfw_policy" {
     stateful_default_actions = ["aws:drop_strict", "aws:alert_strict"]
     stateful_rule_group_reference {
       priority     = 10
-      resource_arn = aws_networkfirewall_rule_group.allow_domains.arn
+      resource_arn = aws_networkfirewall_rule_group.allow_icmp.arn
     }
   }
 }
@@ -82,16 +81,16 @@ resource "aws_networkfirewall_rule_group" "drop_remote" {
   }
 }
 
-# Stateful Rule Group - Allowing access to .amazon.com (HTTPS)
-resource "aws_networkfirewall_rule_group" "allow_domains" {
+# Stateful Rule Group - Allowing ICMP traffic
+resource "aws_networkfirewall_rule_group" "allow_icmp" {
   capacity = 100
-  name     = "allow-domains-${var.identifier}"
+  name     = "allow-icmp-${var.identifier}"
   type     = "STATEFUL"
   rule_group {
     rules_source {
       rules_string = <<EOF
-      pass tcp any any <> $EXTERNAL_NET 443 (msg:"Allowing TCP in port 443"; flow:not_established; sid:892123; rev:1;)
-      pass tls any any -> $EXTERNAL_NET 443 (tls.sni; dotprefix; content:".amazon.com"; endswith; msg:"Allowing .amazon.com HTTPS requests"; sid:892125; rev:1;)
+      alert icmp any any -> any any (msg: "Alerting traffic passing through firewall"; sid:1; rev:1;)
+      pass icmp any any -> any any (msg: "Allowing ICMP packets"; sid:2; rev:1;)
       EOF
     }
     stateful_rule_options {
