@@ -9,10 +9,11 @@
 
 In the example in this repository, the following matrix is used to determine which inspection VPC is used for traffic inspection:
 
-| -------------- | us-east-1     | eu-west-1     | ap-southeast-2     |
-| us-east-1      | **us-east-1** | **us-east-1** | **us-east-1**      |
-| eu-west-1      | **us-east-1** | **eu-west-1** | **eu-west-1**      |
-| ap-southeast-2 | **us-east-1** | **eu-west-1** | **ap-southeast-2** |
+| *AWS Region*       | us-east-1 | eu-west-1 | ap-southeast-2 |
+| --------------     |:---------:| ---------:| --------------:|
+| **us-east-1**      | us-east-1 | us-east-1 | us-east-1      |
+| **eu-west-1**      | us-east-1 | eu-west-1 | eu-west-1      |
+| **ap-southeast-2** | us-east-1 | eu-west-1 | ap-southeast-2 |
 
 ![East-West-SingleHop](../../images/east\_west\_singlehop.png)
 
