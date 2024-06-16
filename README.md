@@ -229,10 +229,11 @@ The *send-via* action allows the use of 1 (*single-hop*) or 2 (*dual-hop*) inspe
 
 In the example in this repository, the following matrix is used to determine which Inspection VPC is used for traffic inspection:
 
-| -------------- | us-east-1     | eu-west-1     | ap-southeast-2     |
-| us-east-1      | **us-east-1** | **us-east-1** | **us-east-1**      |
-| eu-west-1      | **us-east-1** | **eu-west-1** | **eu-west-1**      |
-| ap-southeast-2 | **us-east-1** | **eu-west-1** | **ap-southeast-2** |
+| *AWS Region*       | us-east-1 | eu-west-1 | ap-southeast-2 |
+| --------------     |:---------:| ---------:| --------------:|
+| **us-east-1**      | us-east-1 | us-east-1 | us-east-1      |
+| **eu-west-1**      | us-east-1 | eu-west-1 | eu-west-1      |
+| **ap-southeast-2** | us-east-1 | eu-west-1 | ap-southeast-2 |
 
 ![East-West-SingleHop](./images/east_west_singlehop.png)
 
