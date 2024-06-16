@@ -13,32 +13,12 @@ variable "vpc_name" {
   description = "Name of the VPC where the EC2 instance(s) are created."
 }
 
-variable "vpc_id" {
-  type        = string
-  description = "VPC ID to create the instances."
+variable "vpc" {
+  type        = any
+  description = "VPC resources."
 }
 
-variable "vpc_subnets" {
-  type        = list(string)
-  description = "Subnets in the VPC to create the instances."
-}
-
-variable "number_azs" {
-  type        = number
-  description = "Number of AZs to place instances."
-}
-
-variable "instance_type" {
-  type        = string
-  description = "EC2 instance type."
-}
-
-variable "ec2_iam_instance_profile" {
-  type        = string
-  description = "EC2 instance profile to attach to the EC2 instance(s)"
-}
-
-variable "ingress_vpc_cidr" {
-  type        = string
-  description = "CIDR block of the Ingress VPC (to allow HTTP traffic)."
+variable "vpc_information" {
+  type        = any
+  description = "VPC information (defined in root variables.tf file)."
 }

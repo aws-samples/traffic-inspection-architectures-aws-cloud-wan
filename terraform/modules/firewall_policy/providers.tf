@@ -1,7 +1,7 @@
 /* Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  SPDX-License-Identifier: MIT-0 */
 
-# --- east_west_tgw/modules/inspection/providers.tf ---
+# --- module/firewall_policy/providers.tf ---
 
 terraform {
   required_version = ">= 1.3.0"

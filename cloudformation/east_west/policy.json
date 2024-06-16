@@ -1,0 +1,98 @@
+{
+    "version": "2021.12",
+    "core-network-configuration": {
+      "vpn-ecmp-support": true,
+      "asn-ranges": [
+        "64520-65525"
+      ],
+      "edge-locations": [
+        {
+          "location": "us-east-1"
+        },
+        {
+          "location": "us-west-2"
+        }
+      ]
+    },
+    "segments": [
+      {
+        "name": "prod",
+        "require-attachment-acceptance": false,
+        "isolate-attachments": true
+      },
+      {
+        "name": "nonprod",
+        "require-attachment-acceptance": false,
+        "isolate-attachments": true
+      }
+    ],
+    "network-function-groups": [
+      {
+        "name": "inspectionVpcs",
+        "require-attachment-acceptance": false
+      }
+    ],
+    "segment-actions": [
+      {
+        "action": "send-via",
+        "segment": "prod",
+        "mode": "source-destination",
+        "via": {
+          "network-function-groups": [
+            "inspectionVpcs"
+          ]
+        }
+      },
+      {
+        "action": "send-via",
+        "segment": "prod",
+        "mode": "source-destination",
+        "when-sent-to": {
+          "segments": [
+            "nonprod"
+          ]
+        },
+        "via": {
+          "network-function-groups": [
+            "inspectionVpcs"
+          ]
+        }
+      }
+    ],
+    "attachment-policies": [
+      {
+        "rule-number": 100,
+        "condition-logic": "and",
+        "conditions": [
+          {
+            "type": "tag-exists",
+            "key": "domain"
+          },
+          {
+            "type": "attachment-type",
+            "operator": "equals",
+            "value": "vpc"
+          }
+        ],
+        "action": {
+          "association-method": "tag",
+          "tag-value-of-key": "domain"
+        }
+      },
+      {
+        "rule-number": 200,
+        "condition-logic": "or",
+        "conditions": [
+          {
+            "type": "tag-value",
+            "operator": "equals",
+            "key": "inspection",
+            "value": "true"
+          }
+        ],
+        "action": {
+          "add-to-network-function-group": "inspectionVpcs"
+        }
+      }
+    ]
+  }

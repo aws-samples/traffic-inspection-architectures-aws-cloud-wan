@@ -3,7 +3,7 @@
 
 # --- module/compute/outputs.tf ---
 
-output "instances_created" {
+output "ec2_instances" {
   value       = aws_instance.ec2_instance
   description = "List of instances created."
 }

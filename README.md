@@ -4,8 +4,7 @@ This repository contains code (in AWS CloudFormation and Terraform) to deploy se
 
 * Centralized Outbound.
 * East/West traffic, with both spoke VPCs and inspection VPCs attached to AWS Cloud WAN.
-* East/West traffic, with both spoke VPCs and inspection VPCs attached to [AWS Transit Gateway](https://aws.amazon.com/transit-gateway/) and peered with AWS Cloud WAN.
-* East/West traffic, with spoke VPCs attached to a peered AWS Transit Gateway and inspection VPCs attached to AWS Cloud WAN.
+* East/West traffic, with spoke VPCs attached to a peered [AWS Transit Gateway](https://aws.amazon.com/transit-gateway/) and inspection VPCs attached to AWS Cloud WAN.
 
 Resources are deployed in three AWS Regions: **N. Virginia (us-east-1)**, **Ireland (eu-west-1)**, and **Sydney (ap-southeast-2)**. For specific information about how to deploy each use case, please check the corresponding use case's folder under the corresponding IaC's framework folder (*cloudformation* or *terraform*) you want to use.
 
@@ -349,113 +348,6 @@ In the example in this repository, the following matrix is used to determine whi
         }
       }
     ]
-}
-```
-
-### East/West traffic, with both Spoke VPCs and Inspection VPCs attached to AWS Transit Gateway and peered with AWS Cloud WAN
-
-* Spoke VPCs and Inspection VPC in each AWS Region are attached to the Transit Gateway.
-  * Spoke VPC attachments are associated with a *pre-inspection* route table with a static route (0.0.0.0/0) pointing to the Inspection VPC.
-  * Inspection VPC attachment is associated with a *post-inspection* route table.
-  * A third route table (*cross-region*) contains a static route with destination the Spoke VPC CIDR blocks pointing to the Inspection VPC. This route(s) will be used to enforce the inspection of traffic coming from another AWS Region.
-  * Spoke VPCs propagate to the *post-inspection* route table.
-* In the Core Network, per AWS Region there are two segments: *post-inspection* and *cross-region*. Two Transit Gateway Route Table attachments are created per AWS Region, connecting the corresponding route tables and segments.
-  * The *cross-region* segment will get propagated the static route from the *cross-region* route table (access to the Inspection VPC of that AWS Region). Each *cross-region* segment will share this route with the *post-inspection* segments in the other AWS Regions.
-  * The *post-inspection* segment will propagate this route shared by the *cross-region* segment to the *post-inspection* route table. That way, when traffic needs to traverse two AWS Regions, it will be inspected in both AWS Regions - and asymmetric traffic will be avoided.
-
-![East-West](./images/east_west_tgw.png)
-
-```json
-{
-  "version": "2021.12",
-  "core-network-configuration": {
-    "asn-ranges": [
-      "64520-65525"
-    ],
-    "edge-locations": [
-      { "location": "eu-west-1" },
-      { "location": "us-east-1" },
-      { "location": "ap-southeast-2" }
-    ],
-    "vpn-ecmp-support": false
-  },
-  "segments": [
-    {
-      "name": "postinspectionireland",
-      "isolate-attachments": false,
-      "require-attachment-acceptance": false
-    },
-    {
-      "name": "postinspectionnvirginia",
-      "isolate-attachments": false,
-      "require-attachment-acceptance": false
-    },
-    {
-      "name": "postinspectionsydney",
-      "isolate-attachments": false,
-      "require-attachment-acceptance": false
-    },
-    {
-      "name": "crossregionireland",
-      "isolate-attachments": false,
-      "require-attachment-acceptance": false
-    },
-    {
-      "name": "crossregionnvirginia",
-      "isolate-attachments": false,
-      "require-attachment-acceptance": false
-    },
-    {
-      "name": "crossregionsydney",
-      "isolate-attachments": false,
-      "require-attachment-acceptance": false
-    }
-  ],
-  "attachment-policies": [
-    {
-      "action": {
-        "association-method": "tag",
-        "tag-value-of-key": "domain"
-      },
-      "condition-logic": "or",
-      "conditions": [
-        {
-          "key": "domain",
-          "type": "tag-exists"
-        }
-      ],
-      "rule-number": 100
-    }
-  ],
-  "segment-actions": [
-    {
-      "action": "share",
-      "mode": "attachment-route",
-      "segment": "crossregionireland",
-      "share-with": [
-        "postinspectionsydney",
-        "postinspectionnvirginia"
-      ]
-    },
-    {
-      "action": "share",
-      "mode": "attachment-route",
-      "segment": "crossregionnvirginia",
-      "share-with": [
-        "postinspectionsydney",
-        "postinspectionireland"
-      ]
-    },
-    {
-      "action": "share",
-      "mode": "attachment-route",
-      "segment": "crossregionsydney",
-      "share-with": [
-        "postinspectionnvirginia",
-        "postinspectionireland"
-      ]
-    }
-  ]
 }
 ```
 
