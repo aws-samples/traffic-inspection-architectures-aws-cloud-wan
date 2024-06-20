@@ -16,15 +16,15 @@ output "vpcs" {
   value = {
     ireland = {
       spokes     = { for k, v in module.ireland_spoke_vpcs : k => v.vpc_attributes.id }
-      inspection = module.ireland_inspection_vpc.vpc_attributes.id
+      inspection = module.ireland_inspection_vpc.central_vpcs.inspection.vpc_attributes.id
     }
     nvirginia = {
       spokes     = { for k, v in module.nvirginia_spoke_vpcs : k => v.vpc_attributes.id }
-      inspection = module.nvirginia_inspection_vpc.vpc_attributes.id
+      inspection = module.nvirginia_inspection_vpc.central_vpcs.inspection.vpc_attributes.id
     }
     sydney = {
       spokes     = { for k, v in module.sydney_spoke_vpcs : k => v.vpc_attributes.id }
-      inspection = module.sydney_inspection_vpc.vpc_attributes.id
+      inspection = module.sydney_inspection_vpc.central_vpcs.inspection.vpc_attributes.id
     }
   }
 }
