@@ -43,9 +43,9 @@ resource "aws_networkmanager_core_network_policy_attachment" "core_network_polic
   policy_document = local.core_network_policy
 
   depends_on = [
-    module.ireland_inspecion,
-    module.nvirginia_inspecion,
-    module.sydney_inspecion,
+    module.ireland_inspection_vpc,
+    module.nvirginia_inspection_vpc,
+    module.sydney_inspection_vpc,
     module.ireland_transit_gateway,
     module.nvirginia_transit_gateway,
     module.sydney_transit_gateway
@@ -85,7 +85,7 @@ module "ireland_spoke_vpcs" {
 }
 
 # Inspection VPC - definition in variables.tf
-module "ireland_inspecion" {
+module "ireland_inspection_vpc" {
   source    = "aws-ia/cloudwan/aws"
   version   = "3.2.0"
   providers = { aws = aws.awsireland }
@@ -178,7 +178,7 @@ module "nvirginia_spoke_vpcs" {
 }
 
 # Inspection VPC - definition in variables.tf
-module "nvirginia_inspecion" {
+module "nvirginia_inspection_vpc" {
   source    = "aws-ia/cloudwan/aws"
   version   = "3.2.0"
   providers = { aws = aws.awsnvirginia }
@@ -271,7 +271,7 @@ module "sydney_spoke_vpcs" {
 }
 
 # Inspection VPC - definition in variables.tf
-module "sydney_inspecion" {
+module "sydney_inspection_vpc" {
   source    = "aws-ia/cloudwan/aws"
   version   = "3.2.0"
   providers = { aws = aws.awssydney }
