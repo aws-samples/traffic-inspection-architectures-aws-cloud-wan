@@ -381,6 +381,9 @@ The following matrix is used to determine which Inspection VPC is used for traff
           "location": "eu-west-1"
         },
         {
+          "location": "eu-west-2"
+        },
+        {
           "location": "us-east-1"
         },
         {
@@ -441,6 +444,41 @@ The following matrix is used to determine which Inspection VPC is used for traff
                 [
                   "ap-southeast-2",
                   "eu-west-1"
+                ]
+              ],
+              "use-edge-location": "eu-west-1"
+            },
+            {
+              "edge-sets": [
+                [
+                  "eu-west-2",
+                  "eu-west-1"
+                ]
+              ],
+              "use-edge-location": "eu-west-1"
+            },
+            {
+              "edge-sets": [
+                [
+                  "eu-west-2",
+                  "us-east-1"
+                ]
+              ],
+              "use-edge-location": "us-east-1"
+            },
+            {
+              "edge-sets": [
+                [
+                  "ap-southeast-2",
+                  "eu-west-2"
+                ]
+              ],
+              "use-edge-location": "ap-southeast-2"
+            },
+            {
+              "edge-sets": [
+                [
+                  "eu-west-2"
                 ]
               ],
               "use-edge-location": "eu-west-1"

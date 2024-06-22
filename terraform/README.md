@@ -4,7 +4,7 @@ This repository contains Terraform code to deploy several inspection architectur
 
 * [Centralized Outbound](./centralized_outbound/)
 * [Centralized Outbound (AWS Region without Inspection)](./centralized_outbound_region_without_inspection/)
-* [East/West traffic (Dual-hop inspection)](./east_west/)
+* [East/West traffic (Dual-hop inspection)](./east_west_dualhop/)
 * [East/West traffic (Single-hop inspection)](./east_west_singlehop/)
 * [East/West traffic - spoke VPCs attached to a peered AWS Transit Gateway](./east_west_tgw_spoke_vpcs/)
 
