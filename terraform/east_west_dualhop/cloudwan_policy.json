@@ -38,42 +38,13 @@
       {
         "action": "send-via",
         "segment": "production",
-        "mode": "single-hop",
+        "mode": "dual-hop",
         "when-sent-to": {
           "segments": "*"
         },
         "via": {
           "network-function-groups": [
             "inspectionVpcs"
-          ],
-          "with-edge-overrides": [
-            {
-              "edge-sets": [
-                [
-                  "us-east-1",
-                  "eu-west-1"
-                ]
-              ],
-              "use-edge-location": "us-east-1"
-            },
-            {
-              "edge-sets": [
-                [
-                  "us-east-1",
-                  "ap-southeast-2"
-                ]
-              ],
-              "use-edge-location": "us-east-1"
-            },
-            {
-              "edge-sets": [
-                [
-                  "ap-southeast-2",
-                  "eu-west-1"
-                ]
-              ],
-              "use-edge-location": "eu-west-1"
-            }
           ]
         }
       }

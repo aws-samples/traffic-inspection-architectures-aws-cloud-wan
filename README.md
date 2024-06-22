@@ -251,17 +251,13 @@ The Core Network's policy creates the following resources:
 }
 ```
 
-### East/West traffic, with both Spoke VPCs and Inspection VPCs attached to AWS Cloud WAN
+### East/West traffic (Dual-hop inspection)
 
 The Core Network's policy creates the following resources:
 
 * 1 [segment](https://docs.aws.amazon.com/network-manager/latest/cloudwan/cloudwan-policy-segments.html) per routing domain - *production* (isolated) and *development*. Core Network's policy includes an attachment policy rule that maps each spoke VPCs to the corresponding segment if the attachment contains the following tag: *domain={segment_name}*
 * 1 [network function group](https://docs.aws.amazon.com/network-manager/latest/cloudwan/cloudwan-policy-network-function-groups.html) (NFG) for the inspection VPCs. Core Network's policy includes an attachment policy rule that associates the inspection VPC to the NFG if the attachment includes the following tag: *inspection=true*.
-* **Service Insertion rules**: one [send-via](https://docs.aws.amazon.com/network-manager/latest/cloudwan/cloudwan-policy-service-insertion.html#:~:text=north%2Dsouth%20traffic.-,Send%20via,-%E2%80%94%20Traffic%20flows%20east) action to inspect the traffic between VPCs in the *production* segment, and between the *production* and *development* segments.
-
-The *send-via* action allows the use of 1 (*single-hop*) or 2 (*dual-hop*) inspection VPCs when inspecting traffic between AWS. By default, the repository uses the dual-hop mode, but you can also find the policy to use single-hop.
-
-#### Dual-hop inspection 
+* **Service Insertion rules**: one [send-via](https://docs.aws.amazon.com/network-manager/latest/cloudwan/cloudwan-policy-service-insertion.html#:~:text=north%2Dsouth%20traffic.-,Send%20via,-%E2%80%94%20Traffic%20flows%20east) action to inspect the traffic between VPCs in the *production* segment, and between the *production* and *development* segments. The mode used is *dual-hop*, meaning that traffic traversing two AWS Regions is inspected in both of them.
 
 ![East-West](./images/east_west_dualhop.png)
   
@@ -351,15 +347,24 @@ The *send-via* action allows the use of 1 (*single-hop*) or 2 (*dual-hop*) inspe
 }
 ```
 
-#### Single-hop inspection
+### East/West traffic (Single-hop inspection)
 
-In the example in this repository, the following matrix is used to determine which Inspection VPC is used for traffic inspection:
+The Core Network's policy creates the following resources:
 
-| *AWS Region*       | us-east-1 | eu-west-1 | ap-southeast-2 |
-| --------------     |:---------:| ---------:| --------------:|
-| **us-east-1**      | us-east-1 | us-east-1 | us-east-1      |
-| **eu-west-1**      | us-east-1 | eu-west-1 | eu-west-1      |
-| **ap-southeast-2** | us-east-1 | eu-west-1 | ap-southeast-2 |
+* 1 [segment](https://docs.aws.amazon.com/network-manager/latest/cloudwan/cloudwan-policy-segments.html) per routing domain - *production* (isolated) and *development*. Core Network's policy includes an attachment policy rule that maps each spoke VPCs to the corresponding segment if the attachment contains the following tag: *domain={segment_name}*
+* 1 [network function group](https://docs.aws.amazon.com/network-manager/latest/cloudwan/cloudwan-policy-network-function-groups.html) (NFG) for the inspection VPCs. Core Network's policy includes an attachment policy rule that associates the inspection VPC to the NFG if the attachment includes the following tag: *inspection=true*.
+* **Service Insertion rules**: one [send-via](https://docs.aws.amazon.com/network-manager/latest/cloudwan/cloudwan-policy-service-insertion.html#:~:text=north%2Dsouth%20traffic.-,Send%20via,-%E2%80%94%20Traffic%20flows%20east) action to inspect the traffic between VPCs in the *production* segment, and between the *production* and *development* segments. 
+  * The mode used is *single-hop*, meaning that traffic traversing two AWS Regions is inspected in only one of them.
+  * In addition, one of the Regions (*eu-west-2* in the example) does not have local Inspection VPC. With *single-hop* mode, the traffic from this Region to other ones is inspected in the Region with a local Inspection VPC. For inspection between segments within the Region, *eu-west-1* is used.
+
+The following matrix is used to determine which Inspection VPC is used for traffic inspection:
+
+| *AWS Region*       | us-east-1 | eu-west-1 | eu-west-2      | ap-south-east-2 |
+| --------------     |:---------:| ---------:| --------------:| ---------------:|
+| **us-east-1**      | us-east-1 | us-east-1 | us-east-1      | us-east-1       |
+| **eu-west-1**      | us-east-1 | eu-west-1 | eu-west-1      | eu-west-1       | 
+| **eu-west-2**      | us-east-1 | eu-west-1 | eu-west-1      | ap-southeast-2  |
+| **ap-southeast-2** | us-east-1 | eu-west-1 | ap-southeast-2 | ap-southeast-2  |
 
 ![East-West-SingleHop](./images/east_west_singlehop.png)
 

@@ -1,7 +1,7 @@
 /* Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  SPDX-License-Identifier: MIT-0 */
 
-# --- east_west/main.tf ---
+# --- east_west_dualhop/main.tf ---
 
 locals {
   core_network_policy = jsonencode(jsondecode(file("${path.module}/cloudwan_policy.json")))
