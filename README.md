@@ -1,4 +1,4 @@
-# Traffic Inspection Architectures with AWS Cloud WAN
+# Traffic Inspection Architectures for AWS Cloud WAN
 
 This repository contains code (in AWS CloudFormation and Terraform) to deploy several inspection architectures using [AWS Cloud WAN](https://aws.amazon.com/cloud-wan/) - with [AWS Network Firewall](https://aws.amazon.com/network-firewall/) as inspection solution. The use cases covered are the following ones:
 
@@ -9,6 +9,19 @@ This repository contains code (in AWS CloudFormation and Terraform) to deploy se
 Resources are deployed in three AWS Regions: **N. Virginia (us-east-1)**, **Ireland (eu-west-1)**, **Sydney (ap-southeast-2)**, and **London (eu-west-2)** (this last Region only in some examples). For specific information about how to deploy each use case, please check the corresponding use case's folder under the corresponding IaC's framework folder (*cloudformation* or *terraform*) you want to use.
 
 The examples take advantage of Cloud WAN's [service insertion](https://docs.aws.amazon.com/network-manager/latest/cloudwan/cloudwan-policy-service-insertion.html) feature to simplify the configuration of inspection routes (east-west and north-south) between VPCs within the same or different routing domains.
+
+## Table of Content
+
+- [Traffic Inspection Architectures for AWS Cloud WAN](#traffic-inspection-architectures-for-aws-cloud-wan)
+  - [Table of Content](#table-of-content)
+  - [Use cases](#use-cases)
+    - [Centralized Outbound](#centralized-outbound)
+    - [Centralized Outbound (AWS Region without Inspection VPC)](#centralized-outbound-aws-region-without-inspection-vpc)
+    - [East/West traffic (Dual-hop inspection)](#eastwest-traffic-dual-hop-inspection)
+    - [East/West traffic (Single-hop inspection)](#eastwest-traffic-single-hop-inspection)
+    - [East/West traffic, with spoke VPCs attached to a peered AWS Transit Gateway](#eastwest-traffic-with-spoke-vpcs-attached-to-a-peered-aws-transit-gateway)
+  - [Contributing](#contributing)
+  - [License](#license)
 
 ## Use cases
 
@@ -521,7 +534,7 @@ The following matrix is used to determine which Inspection VPC is used for traff
 }
 ```
 
-### East/West traffic, with Spoke VPCs attached to a peered AWS Transit Gateway and Inspection VPCs attached to AWS Cloud WAN.
+### East/West traffic, with spoke VPCs attached to a peered AWS Transit Gateway
 
 The following resources are created:
 
@@ -675,7 +688,7 @@ Given we need to create a send-to action via the NFG, the east-west traffic insp
 }
 ```
 
-## Security
+## Contributing
 
 See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information.
 
