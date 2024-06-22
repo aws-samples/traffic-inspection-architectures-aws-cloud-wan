@@ -6,7 +6,7 @@ This repository contains code (in AWS CloudFormation and Terraform) to deploy se
 * East/West traffic, with both spoke VPCs and inspection VPCs attached to AWS Cloud WAN.
 * East/West traffic, with spoke VPCs attached to a peered [AWS Transit Gateway](https://aws.amazon.com/transit-gateway/) and inspection VPCs attached to AWS Cloud WAN.
 
-Resources are deployed in three AWS Regions: **N. Virginia (us-east-1)**, **Ireland (eu-west-1)**, and **Sydney (ap-southeast-2)**. For specific information about how to deploy each use case, please check the corresponding use case's folder under the corresponding IaC's framework folder (*cloudformation* or *terraform*) you want to use.
+Resources are deployed in three AWS Regions: **N. Virginia (us-east-1)**, **Ireland (eu-west-1)**, **Sydney (ap-southeast-2)**, and **London (eu-west-2)** (this last Region only in some examples). For specific information about how to deploy each use case, please check the corresponding use case's folder under the corresponding IaC's framework folder (*cloudformation* or *terraform*) you want to use.
 
 The examples take advantage of Cloud WAN's [service insertion](https://docs.aws.amazon.com/network-manager/latest/cloudwan/cloudwan-policy-service-insertion.html) feature to simplify the configuration of inspection routes (east-west and north-south) between VPCs within the same or different routing domains.
 
@@ -121,6 +121,133 @@ The Core Network's policy creates the following resources:
         }
       }
     ]
+}
+```
+
+### Centralized Outbound (AWS Region without Inspection VPC)
+
+This example is similar to the one above, with the difference that we add 1 AWS Region that does not have Inspection VPC. We take advantage of Cloud WAN's service insertion feature to make sure outbound traffic is inspected by the closest Region with Inspection VPC. In this example, London (eu-west-2) does not have Inspection VPC, and we want Ireland (eu-west-1) to  inspect outbound traffic from both Ireland and London.
+
+The Core Network's policy creates the following resources:
+
+* 1 [segment](https://docs.aws.amazon.com/network-manager/latest/cloudwan/cloudwan-policy-segments.html) per routing domain - *production* (isolated) and *development*. Core Network's policy includes an attachment policy rule that maps each spoke VPCs to the corresponding segment if the attachment contains the following tag: *domain={segment_name}*
+* 1 [network function group](https://docs.aws.amazon.com/network-manager/latest/cloudwan/cloudwan-policy-network-function-groups.html) (NFG) for the inspection VPCs. Core Network's policy includes an attachment policy rule that associates the inspection VPC to the NFG if the attachment includes the following tag: *inspection=true*.
+* **Service Insertion rules**: in each routing domain's segment, a [send-to](https://docs.aws.amazon.com/network-manager/latest/cloudwan/cloudwan-policy-service-insertion.html#:~:text=insertion%2Denabled%20segment.-,Send%20to,-%E2%80%94%20Traffic%20flows%20north) action is created to send the default traffic (0.0.0.0/0 and ::/0) to the inspection VPCs.
+  * A *with-edge-overrides* parameter is included to indicate that traffic from *eu-west-2* should be inspected by *eu-west-1* (given *eu-west-2* won't have a local Inspection VPC).
+
+![Centralized Outbound](./images/centralizedOutbound_regionWithoutInspection.png)
+
+```json
+{
+  "version": "2021.12",
+  "core-network-configuration": {
+    "vpn-ecmp-support": true,
+    "asn-ranges": [
+      "64520-65525"
+    ],
+    "edge-locations": [
+      {
+        "location": "eu-west-1"
+      },
+      {
+        "location": "eu-west-2"
+      },
+      {
+        "location": "us-east-1"
+      },
+      {
+        "location": "ap-southeast-2"
+      }
+    ]
+  },
+  "segments": [
+    {
+      "name": "production",
+      "require-attachment-acceptance": false,
+      "isolate-attachments": true
+    },
+    {
+      "name": "development",
+      "require-attachment-acceptance": false
+    }
+  ],
+  "network-function-groups": [
+    {
+      "name": "inspectionVpcs",
+      "require-attachment-acceptance": false
+    }
+  ],
+  "segment-actions": [
+    {
+      "action": "send-to",
+      "segment": "production",
+      "via": {
+        "network-function-groups": [
+          "inspectionVpcs"
+        ],
+        "with-edge-overrides": [
+          {
+            "edge-sets": [
+              [
+                "eu-west-2"
+              ]
+            ],
+            "use-edge-location": "eu-west-1"
+          }
+        ]
+      }
+    },
+    {
+      "action": "send-to",
+      "segment": "development",
+      "via": {
+        "network-function-groups": [
+          "inspectionVpcs"
+        ],
+        "with-edge-overrides": [
+          {
+            "edge-sets": [
+              [
+                "eu-west-2"
+              ]
+            ],
+            "use-edge-location": "eu-west-1"
+          }
+        ]
+      }
+    }
+  ],
+  "attachment-policies": [
+    {
+      "rule-number": 100,
+      "condition-logic": "or",
+      "conditions": [
+        {
+          "type": "tag-value",
+          "operator": "equals",
+          "key": "inspection",
+          "value": "true"
+        }
+      ],
+      "action": {
+        "add-to-network-function-group": "inspectionVpcs"
+      }
+    },
+    {
+      "rule-number": 200,
+      "condition-logic": "or",
+      "conditions": [
+        {
+          "type": "tag-exists",
+          "key": "domain"
+        }
+      ],
+      "action": {
+        "association-method": "tag",
+        "tag-value-of-key": "domain"
+      }
+    }
+  ]
 }
 ```
 
