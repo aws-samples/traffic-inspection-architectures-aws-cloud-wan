@@ -36,11 +36,6 @@ variable "ireland_spoke_vpcs" {
       endpoint_subnet_netmask = 28
       cnetwork_subnet_netmask = 28
       instance_type           = "t2.micro"
-
-      flow_log_config = {
-        log_destination_type = "cloud-watch-logs"
-        retention_in_days    = 7
-      }
     }
     "dev" = {
       name                    = "dev-eu-west-1"
@@ -51,11 +46,6 @@ variable "ireland_spoke_vpcs" {
       endpoint_subnet_netmask = 28
       cnetwork_subnet_netmask = 28
       instance_type           = "t2.micro"
-
-      flow_log_config = {
-        log_destination_type = "cloud-watch-logs"
-        retention_in_days    = 7
-      }
     }
   }
 }
@@ -71,11 +61,6 @@ variable "ireland_inspection_vpc" {
     public_subnet_netmask     = 28
     inspection_subnet_netmask = 28
     cnetwork_subnet_netmask   = 28
-
-    flow_log_config = {
-      log_destination_type = "cloud-watch-logs"
-      retention_in_days    = 7
-    }
   }
 }
 
@@ -94,11 +79,6 @@ variable "nvirginia_spoke_vpcs" {
       endpoint_subnet_netmask = 28
       cnetwork_subnet_netmask = 28
       instance_type           = "t2.micro"
-
-      flow_log_config = {
-        log_destination_type = "cloud-watch-logs"
-        retention_in_days    = 7
-      }
     }
     "dev" = {
       name                    = "dev-us-east-1"
@@ -109,11 +89,6 @@ variable "nvirginia_spoke_vpcs" {
       endpoint_subnet_netmask = 28
       cnetwork_subnet_netmask = 28
       instance_type           = "t2.micro"
-
-      flow_log_config = {
-        log_destination_type = "cloud-watch-logs"
-        retention_in_days    = 7
-      }
     }
   }
 }
@@ -129,11 +104,6 @@ variable "nvirginia_inspection_vpc" {
     public_subnet_netmask     = 28
     inspection_subnet_netmask = 28
     cnetwork_subnet_netmask   = 28
-
-    flow_log_config = {
-      log_destination_type = "cloud-watch-logs"
-      retention_in_days    = 7
-    }
   }
 }
 
@@ -152,11 +122,6 @@ variable "sydney_spoke_vpcs" {
       endpoint_subnet_netmask = 28
       cnetwork_subnet_netmask = 28
       instance_type           = "t2.micro"
-
-      flow_log_config = {
-        log_destination_type = "cloud-watch-logs"
-        retention_in_days    = 7
-      }
     }
     "dev" = {
       name                    = "dev-ap-southeast-2"
@@ -167,11 +132,6 @@ variable "sydney_spoke_vpcs" {
       endpoint_subnet_netmask = 28
       cnetwork_subnet_netmask = 28
       instance_type           = "t2.micro"
-
-      flow_log_config = {
-        log_destination_type = "cloud-watch-logs"
-        retention_in_days    = 7
-      }
     }
   }
 }
@@ -187,10 +147,5 @@ variable "sydney_inspection_vpc" {
     public_subnet_netmask     = 28
     inspection_subnet_netmask = 28
     cnetwork_subnet_netmask   = 28
-
-    flow_log_config = {
-      log_destination_type = "cloud-watch-logs"
-      retention_in_days    = 7
-    }
   }
 }

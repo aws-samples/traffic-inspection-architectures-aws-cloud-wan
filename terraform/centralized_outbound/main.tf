@@ -122,10 +122,11 @@ module "ireland_inspection_vpc" {
 
 # AWS Network Firewall policy
 module "ireland_anfw_policy" {
-  source    = "./modules/policy"
+  source    = "../modules/firewall_policy"
   providers = { aws = aws.awsireland }
 
-  identifier = var.identifier
+  identifier   = var.identifier
+  traffic_flow = "north-south"
 }
 
 # EC2 Instances (in Spoke VPCs) and EC2 Instance Connect endpoint
@@ -213,10 +214,11 @@ module "nvirginia_inspection_vpc" {
 
 # AWS Network Firewall policy
 module "nvirginia_anfw_policy" {
-  source    = "./modules/policy"
+  source    = "../modules/firewall_policy"
   providers = { aws = aws.awsnvirginia }
 
-  identifier = var.identifier
+  identifier   = var.identifier
+  traffic_flow = "north-south"
 }
 
 # EC2 Instances (in Spoke VPCs) and EC2 Instance Connect endpoint
@@ -304,10 +306,11 @@ module "sydney_inspection_vpc" {
 
 # AWS Network Firewall policy
 module "sydney_anfw_policy" {
-  source    = "./modules/policy"
+  source    = "../modules/firewall_policy"
   providers = { aws = aws.awssydney }
 
-  identifier = var.identifier
+  identifier   = var.identifier
+  traffic_flow = "north-south"
 }
 
 # EC2 Instances (in Spoke VPCs) and EC2 Instance Connect endpoint
