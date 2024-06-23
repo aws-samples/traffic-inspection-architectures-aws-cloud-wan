@@ -1,7 +1,5 @@
 .PHONY: deploy deploy-base-policy deploy-workloads update-cloudwan undeploy undeploy-workloads undeploy-cloudwan
 
-CLOUDWAN_POLICY ?= core_network_dualhop.yaml 
-
 deploy: deploy-base-policy deploy-workloads update-cloudwan
 
 deploy-base-policy:
