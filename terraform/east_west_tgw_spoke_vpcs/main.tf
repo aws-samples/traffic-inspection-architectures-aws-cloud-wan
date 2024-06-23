@@ -52,14 +52,6 @@ resource "aws_networkmanager_core_network_policy_attachment" "core_network_polic
   ]
 }
 
-# ---------- GLOBAL RESOURCES - IAM ROLES ----------
-# # EC2 IAM Instance Profile & VPC Flow Logs IAM Role
-# module "iam" {
-#   source = "../modules/iam"
-
-#   identifier = var.identifier
-# }
-
 # ---------- RESOURCES IN IRELAND ----------
 # Spoke VPCs - definition in variables.tf
 module "ireland_spoke_vpcs" {
@@ -121,10 +113,11 @@ module "ireland_inspection_vpc" {
 
 # AWS Network Firewall policy
 module "ireland_anfw_policy" {
-  source    = "./modules/policy"
+  source    = "../modules/firewall_policy"
   providers = { aws = aws.awsireland }
 
-  identifier = var.identifier
+  identifier   = var.identifier
+  traffic_flow = "east-west"
 }
 
 # Transit Gateway resources (RT, Association, Propagation and Cloud WAN peering)
@@ -214,10 +207,11 @@ module "nvirginia_inspection_vpc" {
 
 # AWS Network Firewall policy
 module "nvirginia_anfw_policy" {
-  source    = "./modules/policy"
+  source    = "../modules/firewall_policy"
   providers = { aws = aws.awsnvirginia }
 
-  identifier = var.identifier
+  identifier   = var.identifier
+  traffic_flow = "east-west"
 }
 
 # Transit Gateway resources (RT, Association, Propagation and Cloud WAN peering)
@@ -307,10 +301,11 @@ module "sydney_inspection_vpc" {
 
 # AWS Network Firewall policy
 module "sydney_anfw_policy" {
-  source    = "./modules/policy"
+  source    = "../modules/firewall_policy"
   providers = { aws = aws.awssydney }
 
-  identifier = var.identifier
+  identifier   = var.identifier
+  traffic_flow = "east-west"
 }
 
 # Transit Gateway resources (RT, Association, Propagation and Cloud WAN peering)

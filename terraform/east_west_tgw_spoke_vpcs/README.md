@@ -1,5 +1,5 @@
 <!-- BEGIN_TF_DOCS -->
-# East/West traffic, with Spoke VPCs attached to a peered AWS Transit Gateway and Inspection VPCs attached to AWS Cloud WAN
+# East/West traffic, with Spoke VPCs attached to a peered AWS Transit Gateway
 
 ![East-West](../../images/east\_west\_tgw\_spokeVpcs.png)
 
@@ -38,19 +38,19 @@
 
 | Name | Source | Version |
 |------|--------|---------|
-| <a name="module_ireland_anfw_policy"></a> [ireland\_anfw\_policy](#module\_ireland\_anfw\_policy) | ./modules/policy | n/a |
+| <a name="module_ireland_anfw_policy"></a> [ireland\_anfw\_policy](#module\_ireland\_anfw\_policy) | ../modules/firewall_policy | n/a |
 | <a name="module_ireland_compute"></a> [ireland\_compute](#module\_ireland\_compute) | ../modules/compute | n/a |
-| <a name="module_ireland_inspecion"></a> [ireland\_inspecion](#module\_ireland\_inspecion) | aws-ia/cloudwan/aws | 3.2.0 |
+| <a name="module_ireland_inspection_vpc"></a> [ireland\_inspection\_vpc](#module\_ireland\_inspection\_vpc) | aws-ia/cloudwan/aws | 3.2.0 |
 | <a name="module_ireland_spoke_vpcs"></a> [ireland\_spoke\_vpcs](#module\_ireland\_spoke\_vpcs) | aws-ia/vpc/aws | = 4.4.2 |
 | <a name="module_ireland_transit_gateway"></a> [ireland\_transit\_gateway](#module\_ireland\_transit\_gateway) | ./modules/transit_gateway | n/a |
-| <a name="module_nvirginia_anfw_policy"></a> [nvirginia\_anfw\_policy](#module\_nvirginia\_anfw\_policy) | ./modules/policy | n/a |
+| <a name="module_nvirginia_anfw_policy"></a> [nvirginia\_anfw\_policy](#module\_nvirginia\_anfw\_policy) | ../modules/firewall_policy | n/a |
 | <a name="module_nvirginia_compute"></a> [nvirginia\_compute](#module\_nvirginia\_compute) | ../modules/compute | n/a |
-| <a name="module_nvirginia_inspecion"></a> [nvirginia\_inspecion](#module\_nvirginia\_inspecion) | aws-ia/cloudwan/aws | 3.2.0 |
+| <a name="module_nvirginia_inspection_vpc"></a> [nvirginia\_inspection\_vpc](#module\_nvirginia\_inspection\_vpc) | aws-ia/cloudwan/aws | 3.2.0 |
 | <a name="module_nvirginia_spoke_vpcs"></a> [nvirginia\_spoke\_vpcs](#module\_nvirginia\_spoke\_vpcs) | aws-ia/vpc/aws | = 4.4.2 |
 | <a name="module_nvirginia_transit_gateway"></a> [nvirginia\_transit\_gateway](#module\_nvirginia\_transit\_gateway) | ./modules/transit_gateway | n/a |
-| <a name="module_sydney_anfw_policy"></a> [sydney\_anfw\_policy](#module\_sydney\_anfw\_policy) | ./modules/policy | n/a |
+| <a name="module_sydney_anfw_policy"></a> [sydney\_anfw\_policy](#module\_sydney\_anfw\_policy) | ../modules/firewall_policy | n/a |
 | <a name="module_sydney_compute"></a> [sydney\_compute](#module\_sydney\_compute) | ../modules/compute | n/a |
-| <a name="module_sydney_inspecion"></a> [sydney\_inspecion](#module\_sydney\_inspecion) | aws-ia/cloudwan/aws | 3.2.0 |
+| <a name="module_sydney_inspection_vpc"></a> [sydney\_inspection\_vpc](#module\_sydney\_inspection\_vpc) | aws-ia/cloudwan/aws | 3.2.0 |
 | <a name="module_sydney_spoke_vpcs"></a> [sydney\_spoke\_vpcs](#module\_sydney\_spoke\_vpcs) | aws-ia/vpc/aws | = 4.4.2 |
 | <a name="module_sydney_transit_gateway"></a> [sydney\_transit\_gateway](#module\_sydney\_transit\_gateway) | ./modules/transit_gateway | n/a |
 
@@ -78,5 +78,8 @@
 
 ## Outputs
 
-No outputs.
+| Name | Description |
+|------|-------------|
+| <a name="output_cloud_wan"></a> [cloud\_wan](#output\_cloud\_wan) | AWS Cloud WAN resources. |
+| <a name="output_vpcs"></a> [vpcs](#output\_vpcs) | VPCs created. |
 <!-- END_TF_DOCS -->
