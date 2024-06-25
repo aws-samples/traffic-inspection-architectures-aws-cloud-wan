@@ -3,11 +3,6 @@
 
 # --- centralized_outbound/main.tf ---
 
-locals {
-  core_network_policy = jsonencode(jsondecode(file("${path.module}/cloudwan_policy.json")))
-  base_policy         = jsonencode(jsondecode(file("${path.module}/base_policy.json")))
-}
-
 # ---------- AWS CLOUD WAN RESOURCES ----------
 # Global Network
 resource "aws_networkmanager_global_network" "global_network" {
@@ -28,7 +23,7 @@ resource "aws_networkmanager_core_network" "core_network" {
   global_network_id = aws_networkmanager_global_network.global_network.id
 
   create_base_policy   = true
-  base_policy_document = local.base_policy
+  base_policy_document = data.aws_networkmanager_core_network_policy_document.base_policy.json
 
   tags = {
     Name = "Core Network - ${var.identifier}"
@@ -40,7 +35,7 @@ resource "aws_networkmanager_core_network_policy_attachment" "core_network_polic
   provider = aws.awsnvirginia
 
   core_network_id = aws_networkmanager_core_network.core_network.id
-  policy_document = local.core_network_policy
+  policy_document = data.aws_networkmanager_core_network_policy_document.policy.json
 
   depends_on = [
     module.ireland_inspection_vpc,
