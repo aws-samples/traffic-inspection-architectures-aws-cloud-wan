@@ -5,7 +5,6 @@
 
 locals {
   core_network_policy = jsonencode(jsondecode(file("${path.module}/cloudwan_policy.json")))
-  base_policy         = jsonencode(jsondecode(file("${path.module}/base_policy.json")))
 }
 
 # ---------- AWS CLOUD WAN RESOURCES ----------
@@ -28,7 +27,7 @@ resource "aws_networkmanager_core_network" "core_network" {
   global_network_id = aws_networkmanager_global_network.global_network.id
 
   create_base_policy   = true
-  base_policy_document = local.base_policy
+  base_policy_document = data.aws_networkmanager_core_network_policy_document.base_policy.json
 
   tags = {
     Name = "Core Network - ${var.identifier}"
