@@ -7,7 +7,7 @@
 variable "identifier" {
   type        = string
   description = "Project Identifier, used as identifer when creating resources."
-  default     = "east-west"
+  default     = "east-west-dualhop"
 }
 
 # AWS Regions
@@ -19,13 +19,6 @@ variable "aws_regions" {
     nvirginia = "us-east-1"
     sydney    = "ap-southeast-2"
   }
-}
-
-# Segment configuration - Core Network with a single segment or several ones
-variable "segment_configuration" {
-  type        = string
-  description = "Core Network Segment configuration."
-  default     = "default" # Expected values: default or isolated
 }
 
 # Definition of the VPCs to create in Ireland Region

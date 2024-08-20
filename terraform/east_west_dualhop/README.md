@@ -26,13 +26,14 @@
 | Name | Version |
 |------|---------|
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.3.0 |
-| <a name="requirement_aws"></a> [aws](#requirement\_aws) | >= 4.57.0 |
+| <a name="requirement_aws"></a> [aws](#requirement\_aws) | >= 5.55.0 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aws.awsnvirginia"></a> [aws.awsnvirginia](#provider\_aws.awsnvirginia) | >= 4.57.0 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | >= 5.55.0 |
+| <a name="provider_aws.awsnvirginia"></a> [aws.awsnvirginia](#provider\_aws.awsnvirginia) | >= 5.55.0 |
 
 ## Modules
 
@@ -58,6 +59,8 @@
 | [aws_networkmanager_core_network.core_network](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/networkmanager_core_network) | resource |
 | [aws_networkmanager_core_network_policy_attachment.core_network_policy_attachment](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/networkmanager_core_network_policy_attachment) | resource |
 | [aws_networkmanager_global_network.global_network](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/networkmanager_global_network) | resource |
+| [aws_networkmanager_core_network_policy_document.base_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/networkmanager_core_network_policy_document) | data source |
+| [aws_networkmanager_core_network_policy_document.policy_document](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/networkmanager_core_network_policy_document) | data source |
 
 ## Inputs
 
@@ -69,7 +72,6 @@
 | <a name="input_ireland_spoke_vpcs"></a> [ireland\_spoke\_vpcs](#input\_ireland\_spoke\_vpcs) | Information about the VPCs to create in eu-west-1. | `any` | <pre>{<br>  "dev": {<br>    "cidr_block": "10.0.1.0/24",<br>    "cnetwork_subnet_netmask": 28,<br>    "endpoint_subnet_netmask": 28,<br>    "instance_type": "t2.micro",<br>    "name": "dev-eu-west-1",<br>    "number_azs": 2,<br>    "segment": "development",<br>    "workload_subnet_netmask": 28<br>  },<br>  "prod": {<br>    "cidr_block": "10.0.0.0/24",<br>    "cnetwork_subnet_netmask": 28,<br>    "endpoint_subnet_netmask": 28,<br>    "instance_type": "t2.micro",<br>    "name": "prod-eu-west-1",<br>    "number_azs": 2,<br>    "segment": "production",<br>    "workload_subnet_netmask": 28<br>  }<br>}</pre> | no |
 | <a name="input_nvirginia_inspection_vpc"></a> [nvirginia\_inspection\_vpc](#input\_nvirginia\_inspection\_vpc) | Information about the Inspection VPC to create in us-east-1. | `any` | <pre>{<br>  "cidr_block": "10.100.0.0/16",<br>  "cnetwork_subnet_netmask": 28,<br>  "inspection_subnet_netmask": 28,<br>  "name": "inspection-us-east-1",<br>  "number_azs": 2<br>}</pre> | no |
 | <a name="input_nvirginia_spoke_vpcs"></a> [nvirginia\_spoke\_vpcs](#input\_nvirginia\_spoke\_vpcs) | Information about the VPCs to create in us-east-1. | `any` | <pre>{<br>  "dev": {<br>    "cidr_block": "10.10.1.0/24",<br>    "cnetwork_subnet_netmask": 28,<br>    "endpoint_subnet_netmask": 28,<br>    "instance_type": "t2.micro",<br>    "name": "dev-us-east-1",<br>    "number_azs": 2,<br>    "segment": "development",<br>    "workload_subnet_netmask": 28<br>  },<br>  "prod": {<br>    "cidr_block": "10.10.0.0/24",<br>    "cnetwork_subnet_netmask": 28,<br>    "endpoint_subnet_netmask": 28,<br>    "instance_type": "t2.micro",<br>    "name": "prod-us-east-1",<br>    "number_azs": 2,<br>    "segment": "production",<br>    "workload_subnet_netmask": 28<br>  }<br>}</pre> | no |
-| <a name="input_segment_configuration"></a> [segment\_configuration](#input\_segment\_configuration) | Core Network Segment configuration. | `string` | `"default"` | no |
 | <a name="input_sydney_inspection_vpc"></a> [sydney\_inspection\_vpc](#input\_sydney\_inspection\_vpc) | Information about the Inspection VPC to create in ap-southeast-2. | `any` | <pre>{<br>  "cidr_block": "10.100.0.0/16",<br>  "cnetwork_subnet_netmask": 28,<br>  "inspection_subnet_netmask": 28,<br>  "name": "insp-ap-southeast-2",<br>  "number_azs": 2<br>}</pre> | no |
 | <a name="input_sydney_spoke_vpcs"></a> [sydney\_spoke\_vpcs](#input\_sydney\_spoke\_vpcs) | Information about the VPCs to create in ap-southeast-2. | `any` | <pre>{<br>  "dev": {<br>    "cidr_block": "10.20.1.0/24",<br>    "cnetwork_subnet_netmask": 28,<br>    "endpoint_subnet_netmask": 28,<br>    "instance_type": "t2.micro",<br>    "name": "dev-ap-southeast-2",<br>    "number_azs": 2,<br>    "segment": "development",<br>    "workload_subnet_netmask": 28<br>  },<br>  "prod": {<br>    "cidr_block": "10.20.0.0/24",<br>    "cnetwork_subnet_netmask": 28,<br>    "endpoint_subnet_netmask": 28,<br>    "instance_type": "t2.micro",<br>    "name": "prod-ap-southeast-2",<br>    "number_azs": 2,<br>    "segment": "production",<br>    "workload_subnet_netmask": 28<br>  }<br>}</pre> | no |
 
