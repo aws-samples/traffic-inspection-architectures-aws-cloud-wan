@@ -1,7 +1,7 @@
 {
   "version": "2021.12",
   "core-network-configuration": {
-    "vpn-ecmp-support": true,
+    "vpn-ecmp-support": false,
     "asn-ranges": [
       "64520-65525"
     ],
