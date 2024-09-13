@@ -26,14 +26,14 @@
 | Name | Version |
 |------|---------|
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.3.0 |
-| <a name="requirement_aws"></a> [aws](#requirement\_aws) | >= 5.55.0 |
+| <a name="requirement_aws"></a> [aws](#requirement\_aws) | >= 5.67.0 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| <a name="provider_aws"></a> [aws](#provider\_aws) | >= 5.55.0 |
-| <a name="provider_aws.awsnvirginia"></a> [aws.awsnvirginia](#provider\_aws.awsnvirginia) | >= 5.55.0 |
+| <a name="provider_aws"></a> [aws](#provider\_aws) | >= 5.67.0 |
+| <a name="provider_aws.awsnvirginia"></a> [aws.awsnvirginia](#provider\_aws.awsnvirginia) | >= 5.67.0 |
 
 ## Modules
 
@@ -67,7 +67,7 @@
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
 | <a name="input_aws_regions"></a> [aws\_regions](#input\_aws\_regions) | AWS Regions to create the environment. | `map(string)` | <pre>{<br>  "ireland": "eu-west-1",<br>  "nvirginia": "us-east-1",<br>  "sydney": "ap-southeast-2"<br>}</pre> | no |
-| <a name="input_identifier"></a> [identifier](#input\_identifier) | Project Identifier, used as identifer when creating resources. | `string` | `"east-west"` | no |
+| <a name="input_identifier"></a> [identifier](#input\_identifier) | Project Identifier, used as identifer when creating resources. | `string` | `"east-west-dualhop"` | no |
 | <a name="input_ireland_inspection_vpc"></a> [ireland\_inspection\_vpc](#input\_ireland\_inspection\_vpc) | Information about the Inspection VPC to create in eu-west-1. | `any` | <pre>{<br>  "cidr_block": "10.100.0.0/16",<br>  "cnetwork_subnet_netmask": 28,<br>  "inspection_subnet_netmask": 28,<br>  "name": "inspection-eu-west-1",<br>  "number_azs": 2<br>}</pre> | no |
 | <a name="input_ireland_spoke_vpcs"></a> [ireland\_spoke\_vpcs](#input\_ireland\_spoke\_vpcs) | Information about the VPCs to create in eu-west-1. | `any` | <pre>{<br>  "dev": {<br>    "cidr_block": "10.0.1.0/24",<br>    "cnetwork_subnet_netmask": 28,<br>    "endpoint_subnet_netmask": 28,<br>    "instance_type": "t2.micro",<br>    "name": "dev-eu-west-1",<br>    "number_azs": 2,<br>    "segment": "development",<br>    "workload_subnet_netmask": 28<br>  },<br>  "prod": {<br>    "cidr_block": "10.0.0.0/24",<br>    "cnetwork_subnet_netmask": 28,<br>    "endpoint_subnet_netmask": 28,<br>    "instance_type": "t2.micro",<br>    "name": "prod-eu-west-1",<br>    "number_azs": 2,<br>    "segment": "production",<br>    "workload_subnet_netmask": 28<br>  }<br>}</pre> | no |
 | <a name="input_nvirginia_inspection_vpc"></a> [nvirginia\_inspection\_vpc](#input\_nvirginia\_inspection\_vpc) | Information about the Inspection VPC to create in us-east-1. | `any` | <pre>{<br>  "cidr_block": "10.100.0.0/16",<br>  "cnetwork_subnet_netmask": 28,<br>  "inspection_subnet_netmask": 28,<br>  "name": "inspection-us-east-1",<br>  "number_azs": 2<br>}</pre> | no |
