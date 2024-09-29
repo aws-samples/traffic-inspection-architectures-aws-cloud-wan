@@ -100,8 +100,8 @@ module "ireland_tgw_network_firewall" {
   version   = "1.0.0"
   providers = { aws = aws.awsireland }
 
-  network_firewall_name        = "anfw-ireland-${var.identifier}"
-  network_firewall_description = "AWS Network Firewall (Ireland) - ${var.identifier}"
+  network_firewall_name        = "anfw-ireland-tgw"
+  network_firewall_description = "AWS Network Firewall (Ireland) - Transit Gateway"
   network_firewall_policy      = module.ireland_anfw_policy.policy_arn
 
   vpc_id      = module.ireland_tgw_inspection_vpc.vpc_attributes.id
@@ -143,8 +143,8 @@ module "ireland_cwan_inspection_vpc" {
 
   aws_network_firewall = {
     inspection = {
-      name        = "anfw-ireland"
-      description = "AWS Network Firewall (Ireland)"
+      name        = "anfw-ireland-cwan"
+      description = "AWS Network Firewall (Ireland) - Cloud WAN"
       policy_arn  = module.ireland_anfw_policy.policy_arn
     }
   }
@@ -239,8 +239,8 @@ module "nvirginia_tgw_network_firewall" {
   version   = "1.0.0"
   providers = { aws = aws.awsnvirginia }
 
-  network_firewall_name        = "anfw-nvirginia-${var.identifier}"
-  network_firewall_description = "AWS Network Firewall (N. Virginia) - ${var.identifier}"
+  network_firewall_name        = "anfw-nvirginia-tgw"
+  network_firewall_description = "AWS Network Firewall (N. Virginia) - Transit Gateway"
   network_firewall_policy      = module.nvirginia_anfw_policy.policy_arn
 
   vpc_id      = module.nvirginia_tgw_inspection_vpc.vpc_attributes.id
@@ -282,8 +282,8 @@ module "nvirginia_cwan_inspection_vpc" {
 
   aws_network_firewall = {
     inspection = {
-      name        = "anfw-nvirginia"
-      description = "AWS Network Firewall (N. Virginia)"
+      name        = "anfw-nvirginia-cwan"
+      description = "AWS Network Firewall (N. Virginia) - Cloud WAN"
       policy_arn  = module.nvirginia_anfw_policy.policy_arn
     }
   }
@@ -378,8 +378,8 @@ module "sydney_tgw_network_firewall" {
   version   = "1.0.0"
   providers = { aws = aws.awssydney }
 
-  network_firewall_name        = "anfw-sydney-${var.identifier}"
-  network_firewall_description = "AWS Network Firewall (Sydney) - ${var.identifier}"
+  network_firewall_name        = "anfw-sydney-tgw"
+  network_firewall_description = "AWS Network Firewall (Sydney) - Transit Gateway"
   network_firewall_policy      = module.sydney_anfw_policy.policy_arn
 
   vpc_id      = module.sydney_tgw_inspection_vpc.vpc_attributes.id
@@ -421,8 +421,8 @@ module "sydney_cwan_inspection_vpc" {
 
   aws_network_firewall = {
     inspection = {
-      name        = "anfw-sydney"
-      description = "AWS Network Firewall (Sydney)"
+      name        = "anfw-sydney-cwan"
+      description = "AWS Network Firewall (Sydney) - Cloud WAN"
       policy_arn  = module.sydney_anfw_policy.policy_arn
     }
   }
