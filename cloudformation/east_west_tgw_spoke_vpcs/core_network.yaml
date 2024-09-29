@@ -1,14 +1,14 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: AWS Cloud WAN Inspection - East-West (Global Network & Core Network)
+Description: AWS Cloud WAN Inspection - East-West - Spoke VPCs (TGW) & Inspection VPCs (Cloud WAN) (Global Network & Core Network)
 
 Resources:
   GlobalNetwork:
     Type: AWS::NetworkManager::GlobalNetwork
     Properties:
-      Description: Global Network - Centralized Outbound
+      Description: Global Network - East-West Spoke VPCs (TGW)
       Tags: 
         - Key: Name
-          Value: global-network-centralized-outbound
+          Value: global-network-ew-spokevpcs-tgw
   
   CoreNetwork:
     Type: AWS::NetworkManager::CoreNetwork
@@ -53,11 +53,22 @@ Resources:
             action:
               association-method: tag
               tag-value-of-key: domain
-
-Outputs:
-  CoreNetworkId:
-    Description: Core Network ID.
-    Value: !GetAtt CoreNetwork.CoreNetworkId
-  CoreNetworkArn:
-    Description: Core Network ARN.
-    Value: !GetAtt CoreNetwork.CoreNetworkArn
+        segment-actions:
+          - action: send-to
+            segment: production
+            via:
+              network-function-groups:
+                - inspectionVpcs
+          - action: send-to
+            segment: development
+            via:
+              network-function-groups:
+                - inspectionVpcs
+          - action: send-via
+            segment: production
+            mode: single-hop
+            when-sent-to:
+              segments: "*"
+            via:
+              network-function-groups:
+                - inspectionVpcs

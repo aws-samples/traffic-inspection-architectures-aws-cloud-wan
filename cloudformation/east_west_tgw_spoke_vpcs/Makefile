@@ -1,7 +1,5 @@
 .PHONY: deploy deploy-base-policy deploy-workloads update-cloudwan undeploy undeploy-workloads undeploy-cloudwan
 
-CLOUDWAN_POLICY ?= core_network_dualhop.yaml 
-
 deploy: deploy-base-policy deploy-workloads update-cloudwan
 
 deploy-base-policy:
@@ -10,9 +8,9 @@ deploy-base-policy:
 deploy-workloads: CORENETWORK_ID = $(shell aws cloudformation describe-stacks --stack-name "core-network-east-west" --query 'Stacks[0].Outputs[?OutputKey == `CoreNetworkId`].OutputValue' --output text --region us-east-1 )
 deploy-workloads: CORENETWORK_ARN = $(shell aws cloudformation describe-stacks --stack-name "core-network-east-west" --query 'Stacks[0].Outputs[?OutputKey == `CoreNetworkArn`].OutputValue' --output text --region us-east-1 )
 deploy-workloads:
-	aws cloudformation deploy --stack-name east-west-ireland --template-file east_west.yaml --parameter-overrides CoreNetworkId="$(CORENETWORK_ID)" CoreNetworkArn="$(CORENETWORK_ARN)" --capabilities CAPABILITY_IAM --no-fail-on-empty-changeset --region eu-west-1
-	aws cloudformation deploy --stack-name east-west-nvirginia --template-file east_west.yaml --parameter-overrides CoreNetworkId="$(CORENETWORK_ID)" CoreNetworkArn="$(CORENETWORK_ARN)" --capabilities CAPABILITY_IAM --no-fail-on-empty-changeset --region us-east-1
-	aws cloudformation deploy --stack-name east-west-sydney --template-file east_west.yaml --parameter-overrides CoreNetworkId="$(CORENETWORK_ID)" CoreNetworkArn="$(CORENETWORK_ARN)" --capabilities CAPABILITY_IAM --no-fail-on-empty-changeset --region ap-southeast-2
+	aws cloudformation deploy --stack-name east-west-spokevpcs-tgw-ireland --template-file east_west_tgw_spoke_vpcs.yaml --parameter-overrides CoreNetworkId="$(CORENETWORK_ID)" CoreNetworkArn="$(CORENETWORK_ARN)" --capabilities CAPABILITY_IAM --no-fail-on-empty-changeset --region eu-west-1
+	aws cloudformation deploy --stack-name east-west-spokevpcs-tgw-nvirginia --template-file east_west_tgw_spoke_vpcs.yaml --parameter-overrides CoreNetworkId="$(CORENETWORK_ID)" CoreNetworkArn="$(CORENETWORK_ARN)" --capabilities CAPABILITY_IAM --no-fail-on-empty-changeset --region us-east-1
+	aws cloudformation deploy --stack-name east-west-spokevpcs-tgw-sydney --template-file east_west_tgw_spoke_vpcs.yaml --parameter-overrides CoreNetworkId="$(CORENETWORK_ID)" CoreNetworkArn="$(CORENETWORK_ARN)" --capabilities CAPABILITY_IAM --no-fail-on-empty-changeset --region ap-southeast-2
 
 update-cloudwan:
 	aws cloudformation update-stack --stack-name core-network-east-west --template-body file://"$(CLOUDWAN_POLICY)" --region us-east-1
