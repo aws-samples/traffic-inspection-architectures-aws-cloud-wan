@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: AWS Cloud WAN Inspection - East-West - Spoke VPCs (TGW) & Inspection VPCs (Cloud WAN) (VPCs & Workloads)
+Description: AWS Cloud WAN Inspection - East-West - Spoke VPCs (TGW) & Inspection VPCs (Cloud WAN) (Single-hop inspection)
 Transform: 'AWS::LanguageExtensions'
 
 Parameters:
@@ -138,15 +138,15 @@ Resources:
             - - "peering"
               - !Ref AWS::Region
  
-  # # TGW Policy Table and peering association (Custom Resource)
-  # TGWPolicyTable:
-  #   Type: Custom::TGWPolicyTable
-  #   DependsOn:
-  #     - TGWCWANPeering
-  #   Properties:
-  #     ServiceToken: !GetAtt TGWPolicyTableFunction.Arn
-  #     TransitGatewayId: !GetAtt TransitGateway.Id
-  #     TGWPeeringAttachmentId: !GetAtt TGWCWANPeering.TransitGatewayPeeringAttachmentId
+  # TGW Policy Table and peering association (Custom Resource)
+  TGWPolicyTable:
+    Type: Custom::TGWPolicyTable
+    DependsOn:
+      - TGWCWANPeering
+    Properties:
+      ServiceToken: !GetAtt TGWPolicyTableFunction.Arn
+      TransitGatewayId: !GetAtt TransitGateway.Id
+      TGWPeeringAttachmentId: !GetAtt TGWCWANPeering.TransitGatewayPeeringAttachmentId
 
   # For::Each iteration: per TGW RT type (Production, Development, ProdRoutes)
   # Resources to create: TGW route tables, and Cloud WAN's RT attachments
@@ -160,25 +160,30 @@ Resources:
             - Key: Name
               Value: !Sub tgw-rt-${TypeRT}
           TransitGatewayId: !Ref TransitGateway
-      # '${TypeRT}TGWRouteTableAttachment':
-      #   Type: AWS::NetworkManager::TransitGatewayRouteTableAttachment
-      #   DependsOn:
-      #     - TGWPolicyTable
-      #   Properties:
-      #     PeeringId: !Ref TGWCWANPeering
-      #     TransitGatewayRouteTableArn: !Join
-      #       - ":"
-      #       - - "arn:aws:ec2"
-      #         - !Ref AWS::Region
-      #         - !Ref AWS::AccountId
-      #         - !Join
-      #           - "/"
-      #           - - "transit-gateway-route-table"
-      #             - !Ref
-      #             'Fn::Sub': '${TypeRT}TGWRouteTable'
-      #     Tags:
-      #       - Key: domain
-      #         Value: !FindInMap [CloudWANTag, !Sub '${TypeRT}', domain]
+      '${TypeRT}TGWRouteTableAttachment':
+        Type: AWS::NetworkManager::TransitGatewayRouteTableAttachment
+        DependsOn:
+          - TGWPolicyTable
+        Properties:
+          PeeringId: !Ref TGWCWANPeering
+          TransitGatewayRouteTableArn: !Join
+            - ":"
+            - - "arn:aws:ec2"
+              - !Ref AWS::Region
+              - !Ref AWS::AccountId
+              - !Join
+                - "/"
+                - - "transit-gateway-route-table"
+                  - !Ref
+                    'Fn::Sub': '${TypeRT}TGWRouteTable'
+          Tags:
+            - Key: Name
+              Value: !Join
+                - '-'
+                - - !Sub tgw-rt-${TypeRT}
+                  - !Ref AWS::Region
+            - Key: domain
+              Value: !FindInMap [CloudWANTag, !Sub '${TypeRT}', domain]
 
   # ---------- PRODUCTION VPC ----------
   ProductionVPC:
@@ -193,7 +198,7 @@ Resources:
               - !Ref AWS::StackName
               - !Ref AWS::Region
 
-  # For::Each iteration: per subnet type (Endpoint, Private, CWAN) and AZ (2 AZs)
+  # For::Each iteration: per subnet type (Endpoint, Private, TGW) and AZ (2 AZs)
   # Resources to create: 6 subnets, 6 route tables, 6 route table associations - obtaining AZ affinity
   'Fn::ForEach::ProductionSubnetTypes':
     - SubnetType
@@ -255,8 +260,8 @@ Resources:
     Type: AWS::EC2::TransitGatewayAttachment
     Properties:
       SubnetIds: 
-        - ProductionTGWSubneta
-        - ProductionTGWSubnetb
+        - !Ref ProductionTGWSubneta
+        - !Ref ProductionTGWSubnetb
       Tags: 
         - Key: Name
           Value: !Join
@@ -379,7 +384,7 @@ Resources:
               - !Ref AWS::StackName
               - !Ref AWS::Region
 
-  # For::Each iteration: per subnet type (Endpoint, Private, CWAN) and AZ (2 AZs)
+  # For::Each iteration: per subnet type (Endpoint, Private, TGW) and AZ (2 AZs)
   # Resources to create: 6 subnets, 6 route tables, 6 route table associations - obtaining AZ affinity
   'Fn::ForEach::DevelopmentSubnetTypes':
     - SubnetType
@@ -441,8 +446,8 @@ Resources:
     Type: AWS::EC2::TransitGatewayAttachment
     Properties:
       SubnetIds: 
-        - DevelopmentTGWSubneta
-        - DevelopmentTGWSubnetb
+        - !Ref DevelopmentTGWSubneta
+        - !Ref DevelopmentTGWSubnetb
       Tags: 
         - Key: Name
           Value: !Join
