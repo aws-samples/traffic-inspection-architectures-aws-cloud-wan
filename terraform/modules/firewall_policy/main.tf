@@ -109,20 +109,6 @@ resource "aws_networkfirewall_rule_group" "allow_icmp" {
   name     = "allow-icmp-${var.identifier}"
   type     = "STATEFUL"
   rule_group {
-    rule_variables {
-      ip_sets {
-        key = "PROD"
-        ip_set {
-          definition = ["10.0.0.0/24", "10.10.0.0/24", "10.20.0.0/24"]
-        }
-      }
-      ip_sets {
-        key = "DEV"
-        ip_set {
-          definition = ["10.0.1.0/24", "10.10.1.0/24", "10.20.1.0/24"]
-        }
-      }
-    }
     rules_source {
       rules_string = <<EOF
       alert icmp any any -> any any (msg: "Alerting traffic passing through firewall"; sid:1; rev:1;)

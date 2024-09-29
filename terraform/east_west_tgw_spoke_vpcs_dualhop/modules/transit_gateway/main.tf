@@ -1,7 +1,7 @@
 /* Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  SPDX-License-Identifier: MIT-0 */
 
-# --- east_west_tgw_spoke_vpcs/modules/transit_gateway/main.tf ---
+# --- east_west_tgw_spoke_vpcs_dualhop/modules/transit_gateway/main.tf ---
 
 data "aws_region" "current" {}
 
@@ -20,7 +20,7 @@ resource "aws_ec2_transit_gateway" "transit_gateway" {
 
 # Transit Gateway route tables
 locals {
-  route_tables = ["production", "prod_routes", "development"]
+  route_tables = ["production", "prod_routes", "development", "post_inspection"]
 }
 
 resource "aws_ec2_transit_gateway_route_table" "tgw_route_table" {
@@ -35,18 +35,43 @@ resource "aws_ec2_transit_gateway_route_table" "tgw_route_table" {
 
 # Transit Gateway Route Table Associations
 resource "aws_ec2_transit_gateway_route_table_association" "tgw_association" {
-  for_each = var.vpc_information
+  for_each = var.spoke_vpc_information
 
   transit_gateway_attachment_id  = each.value.transit_gateway_attachment_id
   transit_gateway_route_table_id = each.value.segment == "production" ? aws_ec2_transit_gateway_route_table.tgw_route_table["production"].id : aws_ec2_transit_gateway_route_table.tgw_route_table["development"].id
 }
 
+resource "aws_ec2_transit_gateway_route_table_association" "inspection_tgw_association" {
+  transit_gateway_attachment_id  = var.inspection_vpc_tgw_attachment
+  transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.tgw_route_table["post_inspection"].id
+}
+
 # Transit Gateway Propagations
 resource "aws_ec2_transit_gateway_route_table_propagation" "tgw_propagation" {
-  for_each = var.vpc_information
+  for_each = var.spoke_vpc_information
 
   transit_gateway_attachment_id  = each.value.transit_gateway_attachment_id
   transit_gateway_route_table_id = each.value.segment == "production" ? aws_ec2_transit_gateway_route_table.tgw_route_table["prod_routes"].id : aws_ec2_transit_gateway_route_table.tgw_route_table["development"].id
+}
+
+resource "aws_ec2_transit_gateway_route_table_propagation" "inspection_tgw_propagation" {
+  for_each = var.spoke_vpc_information
+
+  transit_gateway_attachment_id  = each.value.transit_gateway_attachment_id
+  transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.tgw_route_table["post_inspection"].id
+}
+
+# Transit Gateway routes (from production and development to Inspection - 0.0.0.0/0)
+resource "aws_ec2_transit_gateway_route" "production_to_inspection" {
+  destination_cidr_block         = "0.0.0.0/0"
+  transit_gateway_attachment_id  = var.inspection_vpc_tgw_attachment
+  transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.tgw_route_table["production"].id
+}
+
+resource "aws_ec2_transit_gateway_route" "development_to_inspection" {
+  destination_cidr_block         = "0.0.0.0/0"
+  transit_gateway_attachment_id  = var.inspection_vpc_tgw_attachment
+  transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.tgw_route_table["development"].id
 }
 
 # ---------- CLOUD WAN PEERING ----------
@@ -76,7 +101,10 @@ resource "aws_ec2_transit_gateway_policy_table_association" "tgw_policy_table_as
 
 # Transit Gateway Route Table Attachments
 resource "aws_networkmanager_transit_gateway_route_table_attachment" "rt_attachment" {
-  for_each = aws_ec2_transit_gateway_route_table.tgw_route_table
+  for_each = {
+    for k, v in aws_ec2_transit_gateway_route_table.tgw_route_table : k => v
+    if k != "post_inspection"
+  }
 
   peering_id                      = aws_networkmanager_transit_gateway_peering.tgw_cwan_peering.id
   transit_gateway_route_table_arn = each.value.arn

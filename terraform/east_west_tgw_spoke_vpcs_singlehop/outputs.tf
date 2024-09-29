@@ -1,7 +1,7 @@
 /* Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  SPDX-License-Identifier: MIT-0 */
 
-# --- east_west_tgw_spoke_vpcs/outputs.tf
+# --- east_west_tgw_spoke_vpcs_singlehop/outputs.tf
 
 output "cloud_wan" {
   description = "AWS Cloud WAN resources."

@@ -1,7 +1,7 @@
 /* Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  SPDX-License-Identifier: MIT-0 */
 
-# --- east_west_tgw_spoke_vpcs/cloudwan_policy.tf ---
+# --- east_west_tgw_spoke_vpcs_dualhop/cloudwan_policy.tf ---
 
 locals {
   segments = {
@@ -47,24 +47,10 @@ data "aws_networkmanager_core_network_policy_document" "policy" {
     require_attachment_acceptance = false
   }
 
-  dynamic "segment_actions" {
-    for_each = local.segments
-    iterator = segment
-
-    content {
-      action  = "send-to"
-      segment = segment.key
-
-      via {
-        network_function_groups = ["inspectionVpcs"]
-      }
-    }
-  }
-
   segment_actions {
     action  = "send-via"
     segment = "production"
-    mode    = "single-hop"
+    mode    = "dual-hop"
 
     when_sent_to {
       segments = ["development"]
@@ -78,7 +64,7 @@ data "aws_networkmanager_core_network_policy_document" "policy" {
   segment_actions {
     action  = "send-via"
     segment = "production"
-    mode    = "single-hop"
+    mode    = "dual-hop"
 
     via {
       network_function_groups = ["inspectionVpcs"]

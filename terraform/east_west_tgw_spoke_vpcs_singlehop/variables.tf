@@ -1,7 +1,7 @@
 /* Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  SPDX-License-Identifier: MIT-0 */
 
-# --- east_west_spoke_vpcs/variables.tf ---
+# --- east_west_tgw_spoke_vpcs_singlehop/variables.tf ---
 
 # Project Identifier
 variable "identifier" {
