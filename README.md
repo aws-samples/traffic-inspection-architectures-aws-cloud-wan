@@ -17,10 +17,10 @@ The examples take advantage of Cloud WAN's [service insertion](https://docs.aws.
   - [Use cases](#use-cases)
     - [Centralized Outbound](#centralized-outbound)
     - [Centralized Outbound (AWS Region without Inspection VPC)](#centralized-outbound-aws-region-without-inspection-vpc)
-    - [East/West traffic (Dual-hop inspection)](#eastwest-traffic-dual-hop-inspection)
-    - [East/West traffic (Single-hop inspection)](#eastwest-traffic-single-hop-inspection)
-    - [East/West traffic, with spoke VPCs attached to a peered AWS Transit Gateway (Dual-hop inspection)](#eastwest-traffic-with-spoke-vpcs-attached-to-a-peered-aws-transit-gateway-dual-hop-inspection)
-    - [East/West traffic, with spoke VPCs attached to a peered AWS Transit Gateway (Single-hop inspection)](#eastwest-traffic-with-spoke-vpcs-attached-to-a-peered-aws-transit-gateway-single-hop-inspection)
+    - [East/West traffic (Dual-hop)](#eastwest-traffic-dual-hop)
+    - [East/West traffic (Single-hop inspection)](#eastwest-traffic-single-hop)
+    - [East/West traffic (Dual-hop). Spoke VPCs attached to AWS Transit Gateway](#eastwest-traffic-dual-hop-spoke-vpcs-attached-to-aws-transit-gateway)
+    - [East/West traffic (Single-hop). Spoke VPCs attached to AWS Transit Gateway](#eastwest-traffic-single-hop-spoke-vpcs-attached-to-aws-transit-gateway)
   - [Contributing](#contributing)
   - [License](#license)
 
@@ -265,7 +265,7 @@ The Core Network's policy creates the following resources:
 }
 ```
 
-### East/West traffic (Dual-hop inspection)
+### East/West traffic (Dual-hop)
 
 The Core Network's policy creates the following resources:
 
@@ -361,7 +361,7 @@ The Core Network's policy creates the following resources:
 }
 ```
 
-### East/West traffic (Single-hop inspection)
+### East/West traffic (Single-hop)
 
 The Core Network's policy creates the following resources:
 
@@ -535,7 +535,7 @@ The following matrix is used to determine which Inspection VPC is used for traff
 }
 ```
 
-### East/West traffic, with spoke VPCs attached to a peered AWS Transit Gateway (Dual-hop inspection)
+### East/West traffic (Dual-hop). Spoke VPCs attached to AWS Transit Gateway
 
 In this use case, you have two sets of Inspection VPCs: the ones attached to AWS Cloud WAN are used for inter-Region traffic, while the ones attached to AWS Transit Gateway are used for intra-Region traffic.
 
@@ -663,7 +663,7 @@ The following resources are created:
 }
 ```
 
-### East/West traffic, with spoke VPCs attached to a peered AWS Transit Gateway (Single-hop inspection)
+### East/West traffic (Single-hop). Spoke VPCs attached to AWS Transit Gateway
 
 The following resources are created:
 
