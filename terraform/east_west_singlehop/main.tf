@@ -23,25 +23,11 @@ resource "aws_networkmanager_core_network" "core_network" {
   global_network_id = aws_networkmanager_global_network.global_network.id
 
   create_base_policy   = true
-  base_policy_document = data.aws_networkmanager_core_network_policy_document.base_policy.json
+  base_policy_document = data.aws_networkmanager_core_network_policy_document.policy.json
 
   tags = {
     Name = "Core Network - ${var.identifier}"
   }
-}
-
-# Core Network Policy Attachment
-resource "aws_networkmanager_core_network_policy_attachment" "core_network_policy_attachment" {
-  provider = aws.awsnvirginia
-
-  core_network_id = aws_networkmanager_core_network.core_network.id
-  policy_document = data.aws_networkmanager_core_network_policy_document.policy.json
-
-  depends_on = [
-    module.ireland_inspection_vpc,
-    module.nvirginia_inspection_vpc,
-    module.sydney_inspection_vpc
-  ]
 }
 
 # ---------- RESOURCES IN IRELAND ----------
