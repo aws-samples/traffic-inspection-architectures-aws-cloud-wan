@@ -15,9 +15,6 @@
 - (Optional) Edit the variables.tf file in the project root directory - if you want to test with different parameters.
 - Deploy the resources using `terraform apply`.
 - Remember to clean up resoures once you are done by using `terraform destroy`.
-- You will find two Core Network policy documents.
-    - `base_policy.json` is used to create the resources without the Service Insertion actions. This is done because a Service Insertion action cannot reference a Network Function Group that has to attachments associated. This policy is handled by the `aws_networkmanager_core_network` resource.
-    - `cloudwan_policy.json` contains the final format of the policy document, with the Service Insertion actions. The `aws_networkmanager_core_network_policy_attachment` updates the policy document.
 
 **Note** EC2 instances and AWS Network Firewall endpoints will be deployed in all the Availability Zones configured for each VPC. Keep this in mind when testing this environment from a cost perspective - for production environments, we recommend the use of at least 2 AZs for high-availability.
 
@@ -59,9 +56,7 @@
 | Name | Type |
 |------|------|
 | [aws_networkmanager_core_network.core_network](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/networkmanager_core_network) | resource |
-| [aws_networkmanager_core_network_policy_attachment.core_network_policy_attachment](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/networkmanager_core_network_policy_attachment) | resource |
 | [aws_networkmanager_global_network.global_network](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/networkmanager_global_network) | resource |
-| [aws_networkmanager_core_network_policy_document.base_policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/networkmanager_core_network_policy_document) | data source |
 | [aws_networkmanager_core_network_policy_document.policy](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/networkmanager_core_network_policy_document) | data source |
 
 ## Inputs
