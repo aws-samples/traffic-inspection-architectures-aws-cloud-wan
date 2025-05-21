@@ -1,819 +1,138 @@
-# Traffic Inspection Architectures for AWS Cloud WAN
+# AWS Cloud WAN Blueprints
 
-This repository contains code (in AWS CloudFormation and Terraform) to deploy several inspection architectures using [AWS Cloud WAN](https://aws.amazon.com/cloud-wan/) - with [AWS Network Firewall](https://aws.amazon.com/network-firewall/) as inspection solution. The use cases covered are the following ones:
+Welcome to the AWS Cloud WAN Blueprints!
 
-* Centralized Outbound.
-* East/West traffic, with both spoke VPCs and inspection VPCs attached to AWS Cloud WAN.
-* East/West traffic, with spoke VPCs attached to a peered [AWS Transit Gateway](https://aws.amazon.com/transit-gateway/) and inspection VPCs attached to AWS Cloud WAN.
+This project offers a practical guidance for deploying [AWS Cloud WAN](https://aws.amazon.com/cloud-wan/), featuring real-world examples and full end-to-end deployment code. These blueprints complement AWS documentation and AWS blogs by expanding on concepts with complete implementations in various Infrastructure and Code (IaC) languages.
 
-Resources are deployed in three AWS Regions: **N. Virginia (us-east-1)**, **Ireland (eu-west-1)**, **Sydney (ap-southeast-2)**, and **London (eu-west-2)** (this last Region only in some examples). For specific information about how to deploy each use case, please check the corresponding use case's folder under the corresponding IaC's framework folder (*cloudformation* or *terraform*) you want to use.
+Designed for Level 400 (expert) users, the blueprints assume a solid understanding of AWS networking, including VPCs, subnets, route tables, Transit Gateways, and Direct Connect, as well as general networking concepts like IP addressing, routing, IPSec, GRE, BGP, VRFs, SD-WAN, and network security.
 
-The examples take advantage of Cloud WAN's [service insertion](https://docs.aws.amazon.com/network-manager/latest/cloudwan/cloudwan-policy-service-insertion.html) feature to simplify the configuration of inspection routes (east-west and north-south) between VPCs within the same or different routing domains.
+The guide covers advanced architectures, including integrating SD-WAN with AWS Cloud WAN, implementing multi-region inspection, extending VRFs, centralising internet egress with inspection, intra and inter segment inspection, and supporting multi-tenancy, particularly for Internet Service Providers and Telecommunications organisations.
 
 ## Table of Content
 
-- [Traffic Inspection Architectures for AWS Cloud WAN](#traffic-inspection-architectures-for-aws-cloud-wan)
-  - [Table of Content](#table-of-content)
-  - [Use cases](#use-cases)
-    - [Centralized Outbound](#centralized-outbound)
-    - [Centralized Outbound (AWS Region without Inspection VPC)](#centralized-outbound-aws-region-without-inspection-vpc)
-    - [East/West traffic (Dual-hop)](#eastwest-traffic-dual-hop)
-    - [East/West traffic (Single-hop inspection)](#eastwest-traffic-single-hop)
-    - [East/West traffic (Dual-hop). Spoke VPCs attached to AWS Transit Gateway](#eastwest-traffic-dual-hop-spoke-vpcs-attached-to-aws-transit-gateway)
-    - [East/West traffic (Single-hop). Spoke VPCs attached to AWS Transit Gateway](#eastwest-traffic-single-hop-spoke-vpcs-attached-to-aws-transit-gateway)
-  - [Contributing](#contributing)
-  - [License](#license)
+- [Consumption](#consumption)
+- [Patterns](#patterns)
+- [AWS Cloud WAN components and features](#aws-cloud-wan-components-and-features)
+  - [Control Plane, AWS Network Manager, and Network Policy](#control-plane-aws-network-manager-and-the-network-policy)
+  - [Core Network Edge (CNE)](#core-network-edge-cne)
+  - [Segments](#segments)
+  - [Routing actions](#routing-actions)
+  - [Attachments](#attachments)
+  - [Attachment policies](#attachment-policies)
+- [FAQ](#faq)
+- [Authors](#authors)
+- [Contributing](#contributing)
+- [License](#license)
 
-## Use cases
+## Consumption
 
-In all use cases, you will find two routing domains: **production** and **development**. The inspection requirements are the following ones:
+These blueprints have been designed to be consumed in the following manners:
 
-* VPC traffic within the **production** segment will be inspected.
-* Inter-segment traffic will be inspected.
-* VPCs within the **development** segment can talk between each other directly.
+* **Reference Architecture**. You can use the examples and patterns provided as a guide to build your target architecture. From the architectures (and code provided) to can review and test the specific architecture and use it as reference to replicate in your environment.
+* **Copy & paste**. You can do a quick copy-and-paste of a specific architecture snippet into your own environment, using the blueprints as the starting point for your implementation. You can then adapt the initial pattern to customize it to your specific needs. Of course, we recommend to deploy first in pre-production and have a controlled rollout to production environments after enough testing. 
 
-This repository does not focus on AWS Network Firewall's policy configuration, therefore the policy rules configured are simple and only used to test connectivity. 
+**The Cloud WAN blueprints are not intended to be consumed as-is directly from this project**. The patterns provided will use local varibles (as defaults or required to be provided by you) that we recommend you change when deploying in your pre-production or testing environments.
 
-* For egress traffic, only traffic to *.amazon.com* domains is allowed.
-* For east-west traffic, any ICMP packets are alerted and allowed.
+## Patterns
 
-### Centralized Outbound
+1. Simple architectures (TBD)
+2. [Traffic inspection architectures](./patterns/2-traffic_inspection/)
+3. Hybrid architectures (TBD)
 
-The Core Network's policy creates the following resources:
+## AWS Cloud WAN components and features
 
-* 1 [segment](https://docs.aws.amazon.com/network-manager/latest/cloudwan/cloudwan-policy-segments.html) per routing domain - *production* (isolated) and *development*. Core Network's policy includes an attachment policy rule that maps each spoke VPCs to the corresponding segment if the attachment contains the following tag: *domain={segment_name}*
-* 1 [network function group](https://docs.aws.amazon.com/network-manager/latest/cloudwan/cloudwan-policy-network-function-groups.html) (NFG) for the inspection VPCs. Core Network's policy includes an attachment policy rule that associates the inspection VPC to the NFG if the attachment includes the following tag: *inspection=true*.
-* **Service Insertion rules**: in each routing domain's segment, a [send-to](https://docs.aws.amazon.com/network-manager/latest/cloudwan/cloudwan-policy-service-insertion.html#:~:text=insertion%2Denabled%20segment.-,Send%20to,-%E2%80%94%20Traffic%20flows%20north) action is created to send the default traffic (0.0.0.0/0 and ::/0) to the inspection VPCs.
+[AWS Cloud WAN](https://docs.aws.amazon.com/network-manager/latest/cloudwan/what-is-cloudwan.html) is a managed, intent-driven service for building and managing global networks across [AWS Regions](https://aws.amazon.com/about-aws/global-infrastructure/regions_az/) and on-premises environments. Unlike traditional methods that require manual interconnection of multiple [AWS Transit Gateways](https://docs.aws.amazon.com/vpc/latest/tgw/what-is-transit-gateway.html) using regional route tables and static routing between Transit Gateway peering attachments, Cloud WAN automates networking including cross-region dynamic routing, network segmentation, and configuration management, streamlining global network operations.
 
-![Centralized Outbound](./images/centralizedOutbound.png)
+With Cloud WAN, we have seen customers simplify networking complexities while enabling advanced routing, segmentation, and seamless integration with existing infrastructure. This project delves AWS Cloud WAN’s capabilities, configuration approaches, and advanced routing, helping you build and optimise global networking architectures.
 
-```json
-{
-    "version": "2021.12",
-    "core-network-configuration": {
-      "vpn-ecmp-support": true,
-      "asn-ranges": [
-        "64520-65525"
-      ],
-      "edge-locations": [
-        {
-          "location": "eu-west-1"
-        },
-        {
-          "location": "us-east-1"
-        },
-        {
-          "location": "ap-southeast-2"
-        }
-      ]
-    },
-    "segments": [
-      {
-        "name": "production",
-        "require-attachment-acceptance": false,
-        "isolate-attachments": true
-      },
-      {
-        "name": "development",
-        "require-attachment-acceptance": false
-      }
-    ],
-    "network-function-groups": [
-      {
-        "name": "inspectionVpcs",
-        "require-attachment-acceptance": false
-      }
-    ],
-    "segment-actions": [
-      {
-        "action": "send-to",
-        "segment": "production",
-        "via": {
-          "network-function-groups": [
-            "inspectionVpcs"
-          ]
-        }
-      },
-      {
-        "action": "send-to",
-        "segment": "development",
-        "via": {
-          "network-function-groups": [
-            "inspectionVpcs"
-          ]
-        }
-      }
-    ],
-    "attachment-policies": [
-      {
-        "rule-number": 100,
-        "condition-logic": "or",
-        "conditions": [
-          {
-            "type": "tag-value",
-            "operator": "equals",
-            "key": "inspection",
-            "value": "true"
-          }
-        ],
-        "action": {
-            "add-to-network-function-group": "inspectionVpcs"
-        }
-      },
-      {
-        "rule-number": 200,
-        "condition-logic": "or",
-        "conditions": [
-          {
-            "type": "tag-exists",
-            "key": "domain"
-          }
-        ],
-        "action": {
-          "association-method": "tag",
-          "tag-value-of-key": "domain"
-        }
-      }
-    ]
-}
-```
+### Control Plane, AWS Network Manager, and Network Policy
 
-### Centralized Outbound (AWS Region without Inspection VPC)
+Cloud WAN is managed within AWS Network Manager, providing centralized management and visualization of global networks. The control plane is deployed within the Oregon (us-west-2) region i.e. where service is managed from and the metadata is stored.
 
-This example is similar to the one above, with the difference that we add 1 AWS Region that does not have Inspection VPC. We take advantage of Cloud WAN's service insertion feature to make sure outbound traffic is inspected by the closest Region with Inspection VPC. In this example, London (eu-west-2) does not have Inspection VPC, and we want Ireland (eu-west-1) to  inspect outbound traffic from both Ireland and London.
+The foundation of Cloud WAN is the [network policy](https://docs.aws.amazon.com/network-manager/latest/cloudwan/cloudwan-create-policy-version.html), written in a declarative language using JSON (JavaScript Object Notation) that defines all components of Cloud WAN, such as segments, routing, and how attachments map to segments. This policy-driven approach allows organizations to define their intent for access control and traffic routing, while Cloud WAN automates the underlying network configuration, ensuring scalability and consistency across Regions.
 
-The Core Network's policy creates the following resources:
+### Core Network Edge (CNE)
 
-* 1 [segment](https://docs.aws.amazon.com/network-manager/latest/cloudwan/cloudwan-policy-segments.html) per routing domain - *production* (isolated) and *development*. Core Network's policy includes an attachment policy rule that maps each spoke VPCs to the corresponding segment if the attachment contains the following tag: *domain={segment_name}*
-* 1 [network function group](https://docs.aws.amazon.com/network-manager/latest/cloudwan/cloudwan-policy-network-function-groups.html) (NFG) for the inspection VPCs. Core Network's policy includes an attachment policy rule that associates the inspection VPC to the NFG if the attachment includes the following tag: *inspection=true*.
-* **Service Insertion rules**: in each routing domain's segment, a [send-to](https://docs.aws.amazon.com/network-manager/latest/cloudwan/cloudwan-policy-service-insertion.html#:~:text=insertion%2Denabled%20segment.-,Send%20to,-%E2%80%94%20Traffic%20flows%20north) action is created to send the default traffic (0.0.0.0/0 and ::/0) to the inspection VPCs.
-  * A *with-edge-overrides* parameter is included to indicate that traffic from *eu-west-2* should be inspected by *eu-west-1* (given *eu-west-2* won't have a local Inspection VPC).
+The Core Network Edge (CNE) is a key architectural component of Cloud WAN, acting as a regional router similar to a Transit Gateway. While it appears as a single entity within a region, it is highly available and resilient behind the scenes. The CNE is a data plane construct and can be deployed in any region where Cloud WAN is supported.
 
-![Centralized Outbound](./images/centralizedOutbound_regionWithoutInspection.png)
+A key distinction between CNEs and Transit Gateways is that CNEs automatically establish full-mesh peering with one another, leveraging dynamic routing (e-BGP) to exchange routing information. This enables seamless, resilient, and optimal routing across all attached networks. In contrast, Transit Gateways require manual peering and rely on static routing for inter-region connectivity. A CNE supports up to 100Gbps throughput.
 
-```json
-{
-  "version": "2021.12",
-  "core-network-configuration": {
-    "vpn-ecmp-support": true,
-    "asn-ranges": [
-      "64520-65525"
-    ],
-    "edge-locations": [
-      {
-        "location": "eu-west-1"
-      },
-      {
-        "location": "eu-west-2"
-      },
-      {
-        "location": "us-east-1"
-      },
-      {
-        "location": "ap-southeast-2"
-      }
-    ]
-  },
-  "segments": [
-    {
-      "name": "production",
-      "require-attachment-acceptance": false,
-      "isolate-attachments": true
-    },
-    {
-      "name": "development",
-      "require-attachment-acceptance": false
-    }
-  ],
-  "network-function-groups": [
-    {
-      "name": "inspectionVpcs",
-      "require-attachment-acceptance": false
-    }
-  ],
-  "segment-actions": [
-    {
-      "action": "send-to",
-      "segment": "production",
-      "via": {
-        "network-function-groups": [
-          "inspectionVpcs"
-        ],
-        "with-edge-overrides": [
-          {
-            "edge-sets": [
-              [
-                "eu-west-2"
-              ]
-            ],
-            "use-edge-location": "eu-west-1"
-          }
-        ]
-      }
-    },
-    {
-      "action": "send-to",
-      "segment": "development",
-      "via": {
-        "network-function-groups": [
-          "inspectionVpcs"
-        ],
-        "with-edge-overrides": [
-          {
-            "edge-sets": [
-              [
-                "eu-west-2"
-              ]
-            ],
-            "use-edge-location": "eu-west-1"
-          }
-        ]
-      }
-    }
-  ],
-  "attachment-policies": [
-    {
-      "rule-number": 100,
-      "condition-logic": "or",
-      "conditions": [
-        {
-          "type": "tag-value",
-          "operator": "equals",
-          "key": "inspection",
-          "value": "true"
-        }
-      ],
-      "action": {
-        "add-to-network-function-group": "inspectionVpcs"
-      }
-    },
-    {
-      "rule-number": 200,
-      "condition-logic": "or",
-      "conditions": [
-        {
-          "type": "tag-exists",
-          "key": "domain"
-        }
-      ],
-      "action": {
-        "association-method": "tag",
-        "tag-value-of-key": "domain"
-      }
-    }
-  ]
-}
-```
+### Segments
 
-### East/West traffic (Dual-hop)
+A segment functions as a global route table (thinking on Transit Gateway terms). In traditional networking terms, a segment can be compared to a Virtual Routing and Forwarding (VRF) domain. While segments are available in every region where a Core Network Edge exists, you can limit the segment to specific Regions. Important to mention that any supported attachments can only be attached to a segment if it exists within its local Region.
 
-The Core Network's policy creates the following resources:
+How segments are defined depends entirely on customer requirements, but the most common patterns include:
 
-* 1 [segment](https://docs.aws.amazon.com/network-manager/latest/cloudwan/cloudwan-policy-segments.html) per routing domain - *production* (isolated) and *development*. Core Network's policy includes an attachment policy rule that maps each spoke VPCs to the corresponding segment if the attachment contains the following tag: *domain={segment_name}*
-* 1 [network function group](https://docs.aws.amazon.com/network-manager/latest/cloudwan/cloudwan-policy-network-function-groups.html) (NFG) for the inspection VPCs. Core Network's policy includes an attachment policy rule that associates the inspection VPC to the NFG if the attachment includes the following tag: *inspection=true*.
-* **Service Insertion rules**: one [send-via](https://docs.aws.amazon.com/network-manager/latest/cloudwan/cloudwan-policy-service-insertion.html#:~:text=north%2Dsouth%20traffic.-,Send%20via,-%E2%80%94%20Traffic%20flows%20east) action to inspect the traffic between VPCs in the *production* segment, and between the *production* and *development* segments. The mode used is *dual-hop*, meaning that traffic traversing two AWS Regions is inspected in both of them.
+1. Segmentation by **environment** (e.g., development, test, staging, production, hybrid)
+2. Segmentation by **Business Unit** (e.g. Org A, Org B, Org C)
+3. Segmentation by **continent** (e.g., North America, Latin America, Europe, Asia Pacific)
 
-![East-West](./images/east_west_dualhop.png)
-  
-```json
-{
-    "version": "2021.12",
-    "core-network-configuration": {
-      "vpn-ecmp-support": true,
-      "asn-ranges": [
-        "64520-65525"
-      ],
-      "edge-locations": [
-        {
-          "location": "eu-west-1"
-        },
-        {
-          "location": "us-east-1"
-        },
-        {
-          "location": "ap-southeast-2"
-        }
-      ]
-    },
-    "segments": [
-      {
-        "name": "production",
-        "require-attachment-acceptance": false,
-        "isolate-attachments": true
-      },
-      {
-        "name": "development",
-        "require-attachment-acceptance": false
-      }
-    ],
-    "network-function-groups": [
-      {
-        "name": "inspectionVpcs",
-        "require-attachment-acceptance": false
-      }
-    ],
-    "segment-actions": [
-      {
-        "action": "send-via",
-        "segment": "production",
-        "mode": "dual-hop",
-        "when-sent-to": {
-          "segments": "*"
-        },
-        "via": {
-          "network-function-groups": [
-            "inspectionVpcs"
-          ]
-        }
-      }
-    ],
-    "attachment-policies": [
-      {
-        "rule-number": 100,
-        "condition-logic": "or",
-        "conditions": [
-          {
-            "type": "tag-value",
-            "operator": "equals",
-            "key": "inspection",
-            "value": "true"
-          }
-        ],
-        "action": {
-            "add-to-network-function-group": "inspectionVpcs"
-        }
-      },
-      {
-        "rule-number": 200,
-        "condition-logic": "or",
-        "conditions": [
-          {
-            "type": "tag-exists",
-            "key": "domain"
-          }
-        ],
-        "action": {
-          "association-method": "tag",
-          "tag-value-of-key": "domain"
-        }
-      }
-    ]
-}
-```
+Customers may also use a combination of these patterns or a different pattern altogether, but it is important to note that Cloud WAN supports a maximum of 40 segments.
 
-### East/West traffic (Single-hop)
+By default, when an attachment is associated with a segment, it automatically propagates its prefixes to that segment, allowing intra-segment traffic by default. While segments share similarities with VRFs, there are key differences:
 
-The Core Network's policy creates the following resources:
+* Segments can contain Isolated or Non-Isolated attachments. Isolated attachments override the next-hop for a propagated prefix, routing traffic for inspection rather than direct forwarding. More details on this can be found in the [Service Insertion](#service-insertion) section. If you do not create a service insertion, the prefixes will not propagate into the segment, despite being attached to the segment.
+* Overlapping (identical) prefixes cannot be propagated into a segment. If attempted, Cloud WAN will only propagate the first prefix, following a *first one wins* rule.
 
-* 1 [segment](https://docs.aws.amazon.com/network-manager/latest/cloudwan/cloudwan-policy-segments.html) per routing domain - *production* (isolated) and *development*. Core Network's policy includes an attachment policy rule that maps each spoke VPCs to the corresponding segment if the attachment contains the following tag: *domain={segment_name}*
-* 1 [network function group](https://docs.aws.amazon.com/network-manager/latest/cloudwan/cloudwan-policy-network-function-groups.html) (NFG) for the inspection VPCs. Core Network's policy includes an attachment policy rule that associates the inspection VPC to the NFG if the attachment includes the following tag: *inspection=true*.
-* **Service Insertion rules**: one [send-via](https://docs.aws.amazon.com/network-manager/latest/cloudwan/cloudwan-policy-service-insertion.html#:~:text=north%2Dsouth%20traffic.-,Send%20via,-%E2%80%94%20Traffic%20flows%20east) action to inspect the traffic between VPCs in the *production* segment, and between the *production* and *development* segments. 
-  * The mode used is *single-hop*, meaning that traffic traversing two AWS Regions is inspected in only one of them.
-  * In addition, one of the Regions (*eu-west-2* in the example) does not have local Inspection VPC. With *single-hop* mode, the traffic from this Region to other ones is inspected in the Region with a local Inspection VPC. For inspection between segments within the Region, *eu-west-1* is used.
+### Routing actions
 
-The following matrix is used to determine which Inspection VPC is used for traffic inspection:
+#### Segment sharing
 
-| *AWS Region*       | us-east-1 | eu-west-1 | eu-west-2      | ap-south-east-2 |
-| --------------     |:---------:| ---------:| --------------:| ---------------:|
-| **us-east-1**      | us-east-1 | us-east-1 | us-east-1      | us-east-1       |
-| **eu-west-1**      | us-east-1 | eu-west-1 | eu-west-1      | eu-west-1       | 
-| **eu-west-2**      | us-east-1 | eu-west-1 | eu-west-1      | ap-southeast-2  |
-| **ap-southeast-2** | us-east-1 | eu-west-1 | ap-southeast-2 | ap-southeast-2  |
+A **share** action in Cloud WAN is the exchange (propagation) of routes between segments (in a 1:1 fashion or 1:many), without requiring inspection. Important to note that segments are non-transitive, i.e. you cannot route between two segments if a share action has not been created - only learned routes that are directly attached to the segment are exchanged.
 
-![East-West-SingleHop](./images/east_west_singlehop.png)
+#### Service Insertion
 
-```json
-{
-    "version": "2021.12",
-    "core-network-configuration": {
-      "vpn-ecmp-support": true,
-      "asn-ranges": [
-        "64520-65525"
-      ],
-      "edge-locations": [
-        {
-          "location": "eu-west-1"
-        },
-        {
-          "location": "eu-west-2"
-        },
-        {
-          "location": "us-east-1"
-        },
-        {
-          "location": "ap-southeast-2"
-        }
-      ]
-    },
-    "segments": [
-      {
-        "name": "production",
-        "require-attachment-acceptance": false,
-        "isolate-attachments": true
-      },
-      {
-        "name": "development",
-        "require-attachment-acceptance": false
-      }
-    ],
-    "network-function-groups": [
-      {
-        "name": "inspectionVpcs",
-        "require-attachment-acceptance": false
-      }
-    ],
-    "segment-actions": [
-      {
-        "action": "send-via",
-        "segment": "production",
-        "mode": "single-hop",
-        "when-sent-to": {
-          "segments": "*"
-        },
-        "via": {
-          "network-function-groups": [
-            "inspectionVpcs"
-          ],
-          "with-edge-overrides": [
-            {
-              "edge-sets": [
-                [
-                  "us-east-1",
-                  "eu-west-1"
-                ]
-              ],
-              "use-edge-location": "us-east-1"
-            },
-            {
-              "edge-sets": [
-                [
-                  "us-east-1",
-                  "ap-southeast-2"
-                ]
-              ],
-              "use-edge-location": "us-east-1"
-            },
-            {
-              "edge-sets": [
-                [
-                  "ap-southeast-2",
-                  "eu-west-1"
-                ]
-              ],
-              "use-edge-location": "eu-west-1"
-            },
-            {
-              "edge-sets": [
-                [
-                  "eu-west-2",
-                  "eu-west-1"
-                ]
-              ],
-              "use-edge-location": "eu-west-1"
-            },
-            {
-              "edge-sets": [
-                [
-                  "eu-west-2",
-                  "us-east-1"
-                ]
-              ],
-              "use-edge-location": "us-east-1"
-            },
-            {
-              "edge-sets": [
-                [
-                  "ap-southeast-2",
-                  "eu-west-2"
-                ]
-              ],
-              "use-edge-location": "ap-southeast-2"
-            },
-            {
-              "edge-sets": [
-                [
-                  "eu-west-2"
-                ]
-              ],
-              "use-edge-location": "eu-west-1"
-            }
-          ]
-        }
-      }
-    ],
-    "attachment-policies": [
-      {
-        "rule-number": 100,
-        "condition-logic": "or",
-        "conditions": [
-          {
-            "type": "tag-value",
-            "operator": "equals",
-            "key": "inspection",
-            "value": "true"
-          }
-        ],
-        "action": {
-            "add-to-network-function-group": "inspectionVpcs"
-        }
-      },
-      {
-        "rule-number": 200,
-        "condition-logic": "or",
-        "conditions": [
-          {
-            "type": "tag-exists",
-            "key": "domain"
-          }
-        ],
-        "action": {
-          "association-method": "tag",
-          "tag-value-of-key": "domain"
-        }
-      }
-    ]
-}
-```
+The service insertion mechanism defines how inspection is performed, supporting:
 
-### East/West traffic (Dual-hop). Spoke VPCs attached to AWS Transit Gateway
+* Intra-segment traffic - for *isolated* segments.
+* Inter-segment traffic.
+* Egress traffic.
 
-In this use case, you have two sets of Inspection VPCs: the ones attached to AWS Cloud WAN are used for inter-Region traffic, while the ones attached to AWS Transit Gateway are used for intra-Region traffic.
+To start defining Service Insertion we need to start by indicating how to include the firewalls in the network. The integration works the same as with Transit Gateway: by attaching an Inspection VPC to the network. However, there are some changes in how the inspection routing configuration works.
 
-* If you are using AWS Network Firewall as firewall solution, the use of different Inspection VPCs means duplicating the firewall resources. 
-  * If you don't want this duplication of resources (extra cost or managament), you can also have only 1 Inspection VPC attached to both Cloud WAN and Transit Gateway. This pattern will require more specific route when configuring the VPC routes pointing back to the network - *local* routes via Transit Gateway, *cross-Region* routes to Cloud WAN.
-* If you are using another firewall solution behind [Gateway Load Balancer](https://aws.amazon.com/elasticloadbalancing/gateway-load-balancer/) (GWLB), you can place GWLB endpoints in several VPCs pointing to the same GWLB. This means that, although you have two different VPCs to simplify the routing, you are not duplicating the number of firewall resources.
+To start, Inspection VPCs are associated to [Network Function Groups](https://docs.aws.amazon.com/network-manager/latest/cloudwan/cloudwan-policy-network-function-groups.html) (NFGs). A NFG acts as a container for attachments hosting security functions and can be thought of as a managed security segment. Like segments, NFGs are global constructs and can be associated with multiple Inspection VPCs, supporting cross-region inspection to ensure consistent security enforcement across a global network. You can have one or many Network Function Groups, depending on how your firewalls are grouped. 
 
-The following resources are created:
+To allow inspection, you have two different actions to configure in Cloud WAN:
 
-* In each AWS Region, the spoke VPCs are attached to a Transit Gateway. Four TGW route tables are created:
-  * The spoke VPCs of the production routing domain are associated to the *production* route table.
-  * The spoke VPCs of the development routing domain are associated and propagate their routes to the *development* route table.
-  * A third route table (*prod_routes*) is created to inject the production spoke VPCs to Cloud WAN. This enables Cloud WAN to learn the production VPCs CIDRs to create the corresponding routes when configuring the Service Insertion *send-via* actions.
-  * The Inspection VPC attachment to the Transit Gateway is associated to a fourth route table (*post_inspection*), for the delivery of the intra-Region inspected traffic.
-* Each Transit Gateway is peered with Cloud WAN.
-* Two static routes (0.0.0.0/0 & ::/0) in both the *production* and *development* TGW route tables pointing to the Inspection VPC TGW attachment, to enable intra-Region inspection. You can also use more specific routing (either a supernet or a [managed prefix list](https://docs.aws.amazon.com/vpc/latest/userguide/managed-prefix-lists.html) containing all the VPC CIDRs in the Region)
-* The Cloud WAN policy configures the following:
-  * 1 [segment](https://docs.aws.amazon.com/network-manager/latest/cloudwan/cloudwan-policy-segments.html) per routing domain - *production* (isolated) and *development*. Core Network's policy includes an attachment policy rule that associates each Transit Gateway route table attachment to the corresponding segment if the attachment contains the following tag: *domain={segment_name}*. In the example, the *production* and *prod_routes* TGW route table are associated to the *production* segment, and the *development* route table is associated to the *development* segment.
-  * 1 [network function group](https://docs.aws.amazon.com/network-manager/latest/cloudwan/cloudwan-policy-network-function-groups.html) (NFG) for the inspection VPCs. Core Network's policy includes an attachment policy rule that associates the inspection VPC to the NFG if the attachment includes the following tag: *inspection=true*.
-  * **Service Insertion rules**: 
-    * Two [send-via](https://docs.aws.amazon.com/network-manager/latest/cloudwan/cloudwan-policy-service-insertion.html#:~:text=north%2Dsouth%20traffic.-,Send%20via,-%E2%80%94%20Traffic%20flows%20east) actions to inspect the traffic between VPCs in the *production* segment, and between the *production* and *development* segments.
-    * With the send-via action, you will see in the TGWs a path to connect VPCs within the same routing domain (*production* via inspection, *development* direct path) and within different routing domains in different Regions (via inspection). However, routes between segments in the same Region (via inspection) won't be propagated. **That's why we need a dedicated Inspection VPC attached to the Transit Gateway to enable intra-Region traffic.**
+* "send-via" for east-west traffic (intra or inter-segment) inspection.
+* "send-to" for egress traffic inspection.
 
-![East-West-DualHop](./images/east_west_tgw_spokeVpcs_dualhop.png)
+### Attachments
 
-```json
-{
-  "version": "2021.12",
-  "core-network-configuration": {
-    "asn-ranges": [
-      "64520-65525"
-    ],
-    "edge-locations": [
-      {
-        "location": "eu-west-1"
-      },
-      {
-        "location": "us-east-1"
-      },
-      {
-        "location": "ap-southeast-2"
-      }
-    ],
-    "vpn-ecmp-support": false
-  },
-  "segments": [
-    {
-      "isolate-attachments": false,
-      "name": "development",
-      "require-attachment-acceptance": false
-    },
-    {
-      "isolate-attachments": true,
-      "name": "production",
-      "require-attachment-acceptance": false
-    }
-  ],
-  "network-function-groups": [
-    {
-      "name": "inspectionVpcs",
-      "require-attachment-acceptance": false
-    }
-  ],
-  "segment-actions": [
-    {
-      "action": "send-via",
-      "mode": "dual-hop",
-      "segment": "production",
-      "via": {
-        "network-function-groups": [
-          "inspectionVpcs"
-        ]
-      },
-      "when-sent-to": {
-        "segments": [
-          "development"
-        ]
-      }
-    },
-    {
-      "action": "send-via",
-      "mode": "dual-hop",
-      "segment": "production",
-      "via": {
-        "network-function-groups": [
-          "inspectionVpcs"
-        ]
-      },
-      "when-sent-to": {
-        "segments": "production"
-      }
-    }
-  ],
-  "attachment-policies": [
-    {
-      "action": {
-        "add-to-network-function-group": "inspectionVpcs"
-      },
-      "condition-logic": "or",
-      "conditions": [
-        {
-          "key": "inspection",
-          "operator": "equals",
-          "type": "tag-value",
-          "value": "true"
-        }
-      ],
-      "rule-number": 100
-    },
-    {
-      "action": {
-        "association-method": "tag",
-        "tag-value-of-key": "domain"
-      },
-      "condition-logic": "or",
-      "conditions": [
-        {
-          "key": "domain",
-          "type": "tag-exists"
-        }
-      ],
-      "rule-number": 200
-    }
-  ]
-}
-```
+A Cloud WAN attachment is a connection between a network resource (such as a VPC, AWS Direct Connect gateway, SD-WAN Overlay, or a Site-to-Site VPN) and a CNE within AWS Cloud WAN. An attachment can only be associated with one segment. There are a number of different attachment types supported in Cloud WAN:
 
-### East/West traffic (Single-hop). Spoke VPCs attached to AWS Transit Gateway
+1. VPC – Connect a VPC to Cloud WAN, allowing instances within the VPC to communicate with other network segments.
+2. Site-to-Site VPN – Connect on-premises networks to Cloud WAN using an IPsec VPN tunnel.
+3. Direct Connect Gateway – Connect on-premise networks to Cloud WAN using an AWS Direct Connect.
+4. Transit Gateway Route Table – Connect an existing AWS Transit Gateway (TGW) to Cloud WAN for seamless integration.
+5. Connect - Connect to third-party SD-WAN appliances using high-performance attachments providing seamless connectivity. 
+    1. GRE (Generic Routing Encapsulation).
+    2. Tunnel-less Connect (No Encapsulation).
 
-The following resources are created:
+**Note**: A Connect Attachment is used for overlay networking to integrate with SD-WAN appliances. However, it still requires an underlay (transport) VPC attachment.
 
-* In each AWS Region, the spoke VPCs are attached to a Transit Gateway. Three TGW route tables are created:
-  * The spoke VPCs of the production routing domain are associated to the **production* route table.
-  * The spoke VPCs of the development routing domain are associated and propagate their routes to the *development* route table.
-  * A third route table (*prod_routes*) is created to inject the production spoke VPCs to Cloud WAN. This enables Cloud WAN to learn the production VPCs CIDRs to create the corresponding routes when configuring the Service Insertion actions.
-* Each Transit Gateway is peered with Cloud WAN.
-* The Cloud WAN policy configures the following:
-  * 1 [segment](https://docs.aws.amazon.com/network-manager/latest/cloudwan/cloudwan-policy-segments.html) per routing domain - *production* (isolated) and *development*. Core Network's policy includes an attachment policy rule that associates each Transit Gateway route table attachment to the corresponding segment if the attachment contains the following tag: *domain={segment_name}*. In the example, the *production* and *prod_routes* TGW route table are associated to the *production* segment, and the *development* route table is associated to the *development* segment.
-  * 1 [network function group](https://docs.aws.amazon.com/network-manager/latest/cloudwan/cloudwan-policy-network-function-groups.html) (NFG) for the inspection VPCs. Core Network's policy includes an attachment policy rule that associates the inspection VPC to the NFG if the attachment includes the following tag: *inspection=true*.
-  * **Service Insertion rules**: 
-    * One [send-via](https://docs.aws.amazon.com/network-manager/latest/cloudwan/cloudwan-policy-service-insertion.html#:~:text=north%2Dsouth%20traffic.-,Send%20via,-%E2%80%94%20Traffic%20flows%20east) action to inspect the traffic between VPCs in the *production* segment, and between the *production* and *development* segments.
-    * With only the send-via action, you will see in the TGWs a path to connect VPCs within the same routing domain (*production* via inspection, *development* direct path) and within different routing domains in different Regions (via inspection). However, routes between segments in the same Region (via inspection) won't be propagated.
-    * To allow intra-Region communication, two [send-to](https://docs.aws.amazon.com/network-manager/latest/cloudwan/cloudwan-policy-service-insertion.html#:~:text=insertion%2Denabled%20segment.-,Send%20to,-%E2%80%94%20Traffic%20flows%20north) actions are created to send the default traffic (0.0.0.0/0 and ::/0) to the inspection VPCs.
+### Attachment Policies
 
-![East-West-SingleHop](./images/east_west_tgw_spokeVpcs_singlehop.png)
+Attachment Policies are rules within Cloud WAN that govern how attachments are associated with segments or NGFs in a core network. A number of attributes are supper such as tags, attachment type, AWS Account ID, or AWS Region. For NFG association, only tags are supported.
 
-```json
-{
-  "version": "2021.12",
-  "core-network-configuration": {
-    "vpn-ecmp-support": true,
-    "asn-ranges": [
-      "64520-65525"
-    ],
-    "edge-locations": [
-      {
-        "location": "eu-west-1"
-      },
-      {
-        "location": "us-east-1"
-      },
-      {
-        "location": "ap-southeast-2"
-      }
-    ]
-  },
-  "segments": [
-    {
-      "name": "production",
-      "require-attachment-acceptance": false,
-      "isolate-attachments": true
-    },
-    {
-      "name": "development",
-      "require-attachment-acceptance": false
-    }
-  ],
-  "network-function-groups": [
-    {
-      "name": "inspectionVpcs",
-      "require-attachment-acceptance": false
-    }
-  ],
-  "segment-actions": [
-    {
-      "action": "send-to",
-      "segment": "production",
-      "via": {
-        "network-function-groups": [
-          "inspectionVpcs"
-        ]
-      }
-    },
-    {
-      "action": "send-to",
-      "segment": "development",
-      "via": {
-        "network-function-groups": [
-          "inspectionVpcs"
-        ]
-      }
-    },
-    {
-      "action": "send-via",
-      "segment": "production",
-      "mode": "single-hop",
-      "when-sent-to": {
-        "segments": "*"
-      },
-      "via": {
-        "network-function-groups": [
-          "inspectionVpcs"
-        ],
-        "with-edge-overrides": [
-          {
-            "edge-sets": [
-              [
-                "us-east-1",
-                "eu-west-1"
-              ]
-            ],
-            "use-edge-location": "us-east-1"
-          },
-          {
-            "edge-sets": [
-              [
-                "us-east-1",
-                "ap-southeast-2"
-              ]
-            ],
-            "use-edge-location": "us-east-1"
-          },
-          {
-            "edge-sets": [
-              [
-                "ap-southeast-2",
-                "eu-west-1"
-              ]
-            ],
-            "use-edge-location": "eu-west-1"
-          }
-        ]
-      }
-    }
-  ],
-  "attachment-policies": [
-    {
-      "rule-number": 100,
-      "condition-logic": "or",
-      "conditions": [
-        {
-          "type": "tag-value",
-          "operator": "equals",
-          "key": "inspection",
-          "value": "true"
-        }
-      ],
-      "action": {
-        "add-to-network-function-group": "inspectionVpcs"
-      }
-    },
-    {
-      "rule-number": 200,
-      "condition-logic": "or",
-      "conditions": [
-        {
-          "type": "tag-exists",
-          "key": "domain"
-        }
-      ],
-      "action": {
-        "association-method": "tag",
-        "tag-value-of-key": "domain"
-      }
-    }
-  ]
-}
-```
+By default, segments and NFGs will auto-accept attachment requests, but this can be disabled by enabling the *require acceptance* feature. This will ensure that when an attachment is created and associated with a segment/NFG, an administrator must approve the association. Until this is done, the attachment remains in a pending state and will not be able to access the core network. The *require acceptance* feature is recommended for segments that contain sensitive workloads, especially where isolated attachments are not being used.
+
+## FAQ
+
+### I still see some patterns with a "TBD" description
+
+We have already an idea of the general structure of the blueprints we want to cover in this project. However, we have just started developing them and it will take some time until we have a v1 ready. Having *placeholders* allow us to provide you the patterns we have ready while we work on the rest.
+
+In addition, if you have any feedback on the current patterns, or do you want us to work in new patterns, see [CONTRIBUTING](./CONTRIBUTING.md) for more information.
+
+### What are the bandwidth and MTU supported in AWS Cloud WAN?
+
+For an updated information of quotas and limits in AWS Cloud WAN, please refer to the [documentation](https://docs.aws.amazon.com/network-manager/latest/cloudwan/cloudwan-quotas.html).
+
+## Authors
+
+* Mevlit Mustafa, Sr. Network Specialist Solutions Architect, AWS
+* Pablo Sánchez Carmona, Sr. Network Specialist Solutions Architect, AWS
 
 ## Contributing
 
