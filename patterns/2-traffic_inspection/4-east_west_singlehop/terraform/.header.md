@@ -9,7 +9,7 @@ In the example in this repository, the following matrix is used to determine whi
 | **eu-west-2**      | us-east-1 | eu-west-1 | eu-west-1      | ap-southeast-2  |
 | **ap-southeast-2** | us-east-1 | eu-west-1 | ap-southeast-2 | ap-southeast-2  |
 
-![East-West](../../images/east_west_singlehop.png)
+![East-West](../../../../images/east_west_singlehop.png)
 
 ## Prerequisites
 - An AWS account with an IAM user with the appropriate permissions

@@ -1,6 +1,6 @@
 # Centralized Outbound inspection with AWS Cloud WAN
 
-![Centralized Outbound](../../images/centralizedOutbound.png)
+![Centralized Outbound](../../../../images/centralizedOutbound.png)
 
 ## Prerequisites
 - An AWS account with an IAM user with the appropriate permissions

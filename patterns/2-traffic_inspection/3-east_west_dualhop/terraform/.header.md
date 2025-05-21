@@ -1,6 +1,6 @@
 # East/West traffic (Dual-hop inspection)
 
-![East-West](../../images/east_west_dualhop.png)
+![East-West](../../../../images/east_west_dualhop.png)
 
 ## Prerequisites
 - An AWS account with an IAM user with the appropriate permissions

@@ -1,6 +1,6 @@
 # East/West traffic, with Spoke VPCs attached to a peered AWS Transit Gateway (Single-hop inspection)
 
-![East-West-SingleHop](../../images/east_west_tgw_spokeVpcs_singlehop.png)
+![East-West-SingleHop](../../../../images/east_west_tgw_spokeVpcs_singlehop.png)
 
 ## Prerequisites
 - An AWS account with an IAM user with the appropriate permissions

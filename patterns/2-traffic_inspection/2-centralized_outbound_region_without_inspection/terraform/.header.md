@@ -1,6 +1,6 @@
 # Centralized Outbound inspection with AWS Cloud WAN (AWS Region without Inspection VPC)
 
-![Centralized Outbound](../../images/centralizedOutbound_regionWithoutInspection.png)
+![Centralized Outbound](../../../../images/centralizedOutbound_regionWithoutInspection.png)
 
 ## Prerequisites
 - An AWS account with an IAM user with the appropriate permissions
