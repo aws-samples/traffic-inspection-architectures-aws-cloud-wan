@@ -101,7 +101,7 @@ module "ireland_inspection_vpc" {
 
 # AWS Network Firewall policy
 module "ireland_anfw_policy" {
-  source    = "../modules/firewall_policy"
+  source    = "../../../tf_modules/firewall_policy"
   providers = { aws = aws.awsireland }
 
   identifier   = var.identifier
@@ -111,7 +111,7 @@ module "ireland_anfw_policy" {
 # EC2 Instances (in Spoke VPCs) and EC2 Instance Connect endpoint
 module "ireland_compute" {
   for_each  = module.ireland_spoke_vpcs
-  source    = "../modules/compute"
+  source    = "../../../tf_modules/compute"
   providers = { aws = aws.awsireland }
 
   identifier      = var.identifier
@@ -191,7 +191,7 @@ module "nvirginia_inspection_vpc" {
 
 # AWS Network Firewall policy
 module "nvirginia_anfw_policy" {
-  source    = "../modules/firewall_policy"
+  source    = "../../../tf_modules/firewall_policy"
   providers = { aws = aws.awsnvirginia }
 
   identifier   = var.identifier
@@ -201,7 +201,7 @@ module "nvirginia_anfw_policy" {
 # EC2 Instances (in Spoke VPCs) and EC2 Instance Connect endpoint
 module "nvirginia_compute" {
   for_each  = module.nvirginia_spoke_vpcs
-  source    = "../modules/compute"
+  source    = "../../../tf_modules/compute"
   providers = { aws = aws.awsnvirginia }
 
   identifier      = var.identifier
@@ -281,7 +281,7 @@ module "sydney_inspection_vpc" {
 
 # AWS Network Firewall policy
 module "sydney_anfw_policy" {
-  source    = "../modules/firewall_policy"
+  source    = "../../../tf_modules/firewall_policy"
   providers = { aws = aws.awssydney }
 
   identifier   = var.identifier
@@ -291,7 +291,7 @@ module "sydney_anfw_policy" {
 # EC2 Instances (in Spoke VPCs) and EC2 Instance Connect endpoint
 module "sydney_compute" {
   for_each  = module.sydney_spoke_vpcs
-  source    = "../modules/compute"
+  source    = "../../../tf_modules/compute"
   providers = { aws = aws.awssydney }
 
   identifier      = var.identifier
