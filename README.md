@@ -76,7 +76,7 @@ By default, when an attachment is associated with a segment, it automatically pr
 
 ### Routing actions
 
-#### Segment sharing
+#### Segment sharing
 
 A **share** action in Cloud WAN is the exchange (propagation) of routes between segments (in a 1:1 fashion or 1:many), without requiring inspection. Important to note that segments are non-transitive, i.e. you cannot route between two segments if a share action has not been created - only learned routes that are directly attached to the segment are exchanged.
 
@@ -125,7 +125,7 @@ We have already an idea of the general structure of the blueprints we want to co
 
 In addition, if you have any feedback on the current patterns, or do you want us to work in new patterns, see [CONTRIBUTING](./CONTRIBUTING.md) for more information.
 
-### What are the bandwidth and MTU supported in AWS Cloud WAN?
+### What are the bandwidth and MTU supported in AWS Cloud WAN?
 
 For an updated information of quotas and limits in AWS Cloud WAN, please refer to the [documentation](https://docs.aws.amazon.com/network-manager/latest/cloudwan/cloudwan-quotas.html).
 
